@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { AssetCard } from './asset-card'
 import { AssetPreview } from './asset-preview'
+import { CreateLinkModal } from '@/components/links/create-link-modal'
 import type { Asset } from '@/types'
 
 interface AssetGridProps {
@@ -13,6 +14,7 @@ interface AssetGridProps {
 export function AssetGrid({ assets, onAssetsChange }: AssetGridProps) {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null)
+  const [createLinkAsset, setCreateLinkAsset] = useState<Asset | null>(null)
 
   const handleDelete = async (asset: Asset) => {
     // For demo mode
@@ -46,6 +48,7 @@ export function AssetGrid({ assets, onAssetsChange }: AssetGridProps) {
             onSelect={setSelectedAsset}
             onPreview={setPreviewAsset}
             onDelete={handleDelete}
+            onCreateLink={setCreateLinkAsset}
           />
         ))}
       </div>
@@ -55,6 +58,13 @@ export function AssetGrid({ assets, onAssetsChange }: AssetGridProps) {
         asset={previewAsset}
         open={!!previewAsset}
         onOpenChange={(open) => !open && setPreviewAsset(null)}
+      />
+
+      {/* Create link modal */}
+      <CreateLinkModal
+        open={!!createLinkAsset}
+        onOpenChange={(open) => !open && setCreateLinkAsset(null)}
+        asset={createLinkAsset}
       />
     </>
   )
