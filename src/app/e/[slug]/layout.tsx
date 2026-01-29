@@ -19,20 +19,20 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
   const { slug } = await params
 
   // Default metadata
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://ez-host.ai'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://pagelink.com'
   const defaultMetadata: Metadata = {
-    title: 'Shared Link - EZ-Host.ai',
-    description: 'Access shared content on EZ-Host.ai',
+    title: 'Shared Link - Pagelink',
+    description: 'Access shared content on Pagelink',
     openGraph: {
       title: 'Shared Link',
-      description: 'Access shared content on EZ-Host.ai',
+      description: 'Access shared content on Pagelink',
       images: [`${baseUrl}/api/og?title=Shared%20Link`],
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
       title: 'Shared Link',
-      description: 'Access shared content on EZ-Host.ai',
+      description: 'Access shared content on Pagelink',
       images: [`${baseUrl}/api/og?title=Shared%20Link`],
     },
   }
@@ -60,19 +60,19 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
   const ogImageUrl = `${baseUrl}/api/og?title=${encodeURIComponent(`Link: ${slug}`)}`
 
   return {
-    title: `${slug} - EZ-Host.ai`,
-    description: 'Access shared content on EZ-Host.ai',
+    title: `${slug} - Pagelink`,
+    description: 'Access shared content on Pagelink',
     openGraph: {
       title: `Shared Link`,
-      description: 'Access shared content on EZ-Host.ai',
+      description: 'Access shared content on Pagelink',
       images: [ogImageUrl],
       type: 'website',
-      siteName: 'EZ-Host.ai',
+      siteName: 'Pagelink',
     },
     twitter: {
       card: 'summary_large_image',
       title: 'Shared Link',
-      description: 'Access shared content on EZ-Host.ai',
+      description: 'Access shared content on Pagelink',
       images: [ogImageUrl],
     },
   }

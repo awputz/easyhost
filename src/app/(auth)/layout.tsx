@@ -11,10 +11,10 @@ export default function AuthLayout({
       <header className="border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">EZ</span>
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">P</span>
             </div>
-            <span className="font-semibold text-lg">EZ-Host.ai</span>
+            <span className="font-semibold text-lg">Pagelink</span>
           </Link>
         </div>
       </header>
@@ -27,7 +27,7 @@ export default function AuthLayout({
       {/* Footer */}
       <footer className="border-t border-border py-4">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} EZ-Host.ai. All rights reserved.
+          &copy; {new Date().getFullYear()} Pagelink. All rights reserved.
         </div>
       </footer>
     </div>

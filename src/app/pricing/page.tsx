@@ -164,7 +164,7 @@ export default function PricingPage() {
     }
 
     if (planName === 'Enterprise') {
-      window.location.href = 'mailto:sales@ez.host?subject=Enterprise%20Plan%20Inquiry'
+      window.location.href = 'mailto:sales@pagelink.com?subject=Enterprise%20Plan%20Inquiry'
       return
     }
 
@@ -197,7 +197,7 @@ export default function PricingPage() {
       <header className="border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="text-xl font-bold">
-            EasyHost
+            Pagelink
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/login">
@@ -341,7 +341,7 @@ export default function PricingPage() {
         <div className="text-center mt-20">
           <h2 className="text-2xl font-bold mb-4">Ready to get started?</h2>
           <p className="text-muted-foreground mb-6">
-            Join thousands of users who trust EasyHost for their file hosting needs.
+            Join thousands of users who trust Pagelink for their document hosting needs.
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link href="/signup">
@@ -362,7 +362,7 @@ export default function PricingPage() {
       {/* Footer */}
       <footer className="border-t mt-20 py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} EasyHost. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Pagelink. All rights reserved.</p>
         </div>
       </footer>
     </div>

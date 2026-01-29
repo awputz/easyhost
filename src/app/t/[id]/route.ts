@@ -28,7 +28,7 @@ const DEMO_TEMPLATE = `<!DOCTYPE html>
   <div class="hero">
     <div class="logo">{{company_name}}</div>
     <h1>{{hero_title}}</h1>
-    <p>This is a demo template from EZ-Host.ai. Create dynamic landing pages with variable injection.</p>
+    <p>This is a demo template from Pagelink. Create dynamic landing pages with variable injection.</p>
     <a href="#" class="btn">Get Started</a>
   </div>
 </body>
@@ -84,12 +84,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return new NextResponse(
         `<!DOCTYPE html>
         <html>
-        <head><title>Not Found - EZ-Host.ai</title></head>
+        <head><title>Not Found - Pagelink</title></head>
         <body style="font-family: system-ui; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0f0f1a; color: white;">
           <div style="text-align: center;">
             <h1 style="font-size: 4rem; margin-bottom: 1rem;">404</h1>
             <p style="color: #a1a1aa;">Template instance not found</p>
-            <a href="/" style="color: #8b5cf6; margin-top: 1rem; display: inline-block;">Go to EZ-Host.ai</a>
+            <a href="/" style="color: #8b5cf6; margin-top: 1rem; display: inline-block;">Go to Pagelink</a>
           </div>
         </body>
         </html>`,

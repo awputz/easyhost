@@ -59,10 +59,10 @@ export async function GET(request: NextRequest) {
                 marginRight: 20,
               }}
             >
-              <span style={{ fontSize: 40, color: 'white', fontWeight: 'bold' }}>EZ</span>
+              <span style={{ fontSize: 40, color: 'white', fontWeight: 'bold' }}>P</span>
             </div>
             <span style={{ fontSize: 48, color: 'white', fontWeight: 'bold' }}>
-              EZ-Host.ai
+              Pagelink
             </span>
           </div>
 
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
               fontSize: 20,
             }}
           >
-            Hosted on EZ-Host.ai
+            Hosted on Pagelink
           </div>
         </div>
       ),
