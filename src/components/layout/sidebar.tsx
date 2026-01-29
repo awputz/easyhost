@@ -13,6 +13,7 @@ import {
   Settings,
   HelpCircle,
   ChevronLeft,
+  FileText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -25,6 +26,7 @@ interface SidebarProps {
 
 const navigation = [
   { name: 'Assets', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Pages', href: '/dashboard/pages', icon: FileText },
   { name: 'Folders', href: '/dashboard/folders', icon: FolderOpen },
   { name: 'Links', href: '/dashboard/links', icon: Link2 },
   { name: 'Collections', href: '/dashboard/collections', icon: FolderKanban },
