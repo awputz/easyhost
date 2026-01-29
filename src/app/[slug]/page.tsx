@@ -1,12 +1,14 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
-import Link from 'next/link'
+import { ExpiredDocument } from '@/components/pagelink/expired-document'
+import { PrivateDocument } from '@/components/pagelink/private-document'
+import { DocumentViewer } from '@/components/pagelink/document-viewer'
 
 // Reserved slugs that shouldn't be used for documents
 const RESERVED_SLUGS = [
   'api', 'dashboard', 'login', 'signup', 'create', 'pricing',
-  'templates', 'settings', 'p', 'c', 'e', 't', 'help', 'docs'
+  'templates', 'settings', 'p', 'c', 'e', 't', 'help', 'docs', 'd'
 ]
 
 // Use service role for public document serving
@@ -28,33 +30,64 @@ interface DocumentData {
   is_public: boolean
   show_pagelink_badge: boolean
   view_count: number
+  password_hash: string | null
+  expires_at: string | null
+  allowed_emails: string[] | null
 }
 
-async function getDocument(slug: string): Promise<DocumentData | null> {
+interface DocumentAccessResult {
+  status: 'ok' | 'expired' | 'private' | 'password_required' | 'not_found'
+  document?: DocumentData
+}
+
+async function getDocumentAccess(slug: string): Promise<DocumentAccessResult> {
   // Check for reserved slugs
   if (RESERVED_SLUGS.includes(slug)) {
-    return null
+    return { status: 'not_found' }
   }
 
   const supabase = getAdminClient()
 
   if (!supabase) {
     // Demo mode - return demo documents for certain slugs
-    return getDemoDocument(slug)
+    const demoDoc = getDemoDocument(slug)
+    if (demoDoc) {
+      return { status: 'ok', document: demoDoc }
+    }
+    return { status: 'not_found' }
   }
 
   const { data: doc, error } = await supabase
     .from('pagelink_documents')
-    .select('id, slug, title, html, theme, custom_branding, is_public, show_pagelink_badge, view_count')
+    .select('id, slug, title, html, theme, custom_branding, is_public, show_pagelink_badge, view_count, password_hash, expires_at, allowed_emails')
     .eq('slug', slug)
-    .eq('is_public', true)
     .single()
 
   if (error || !doc) {
     // Fallback to demo
-    return getDemoDocument(slug)
+    const demoDoc = getDemoDocument(slug)
+    if (demoDoc) {
+      return { status: 'ok', document: demoDoc }
+    }
+    return { status: 'not_found' }
   }
 
+  // Check if document is public
+  if (!doc.is_public) {
+    return { status: 'private' }
+  }
+
+  // Check if document is expired
+  if (doc.expires_at && new Date(doc.expires_at) < new Date()) {
+    return { status: 'expired', document: doc as DocumentData }
+  }
+
+  // Check if document requires password
+  if (doc.password_hash) {
+    return { status: 'password_required', document: doc as DocumentData }
+  }
+
+  // Document is accessible
   // Increment view count (fire and forget)
   supabase.rpc('increment_pagelink_view_count', { doc_slug: slug }).then(() => {})
 
@@ -65,7 +98,7 @@ async function getDocument(slug: string): Promise<DocumentData | null> {
     created_at: new Date().toISOString(),
   }).then(() => {})
 
-  return doc as DocumentData
+  return { status: 'ok', document: doc as DocumentData }
 }
 
 function getDemoDocument(slug: string): DocumentData | null {
@@ -81,6 +114,9 @@ function getDemoDocument(slug: string): DocumentData | null {
       is_public: true,
       show_pagelink_badge: true,
       view_count: 42,
+      password_hash: null,
+      expires_at: null,
+      allowed_emails: null,
     }
   }
   return null
@@ -98,12 +134,28 @@ export async function generateMetadata({
     return {}
   }
 
-  const doc = await getDocument(slug)
+  const result = await getDocumentAccess(slug)
 
-  if (!doc) {
+  if (result.status === 'not_found') {
     return { title: 'Document Not Found' }
   }
 
+  if (result.status === 'expired') {
+    return { title: 'Document Expired' }
+  }
+
+  if (result.status === 'private') {
+    return { title: 'Private Document' }
+  }
+
+  if (result.status === 'password_required') {
+    return {
+      title: result.document?.title || 'Protected Document',
+      description: 'This document is password protected',
+    }
+  }
+
+  const doc = result.document!
   return {
     title: doc.title,
     description: `View ${doc.title} on Pagelink`,
@@ -127,77 +179,52 @@ export default async function PublicDocumentPage({
     notFound()
   }
 
-  const doc = await getDocument(slug)
+  const result = await getDocumentAccess(slug)
 
-  if (!doc) {
+  // Handle not found
+  if (result.status === 'not_found') {
     notFound()
   }
 
-  // Add Pagelink badge if enabled
-  const htmlWithBadge = doc.show_pagelink_badge
-    ? doc.html.replace(
-        '</body>',
-        `${getPagelinkBadge()}</body>`
-      )
-    : doc.html
+  // Handle private documents
+  if (result.status === 'private') {
+    return <PrivateDocument />
+  }
 
+  // Handle expired documents
+  if (result.status === 'expired' && result.document) {
+    return (
+      <ExpiredDocument
+        title={result.document.title}
+        expiredAt={result.document.expires_at!}
+      />
+    )
+  }
+
+  // Handle password-protected documents
+  if (result.status === 'password_required' && result.document) {
+    return (
+      <DocumentViewer
+        slug={result.document.slug}
+        title={result.document.title}
+        html={null}
+        hasPassword={true}
+        showBadge={result.document.show_pagelink_badge}
+      />
+    )
+  }
+
+  // Document is accessible - render it
+  const doc = result.document!
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>{doc.title}</title>
-      </head>
-      <body>
-        <div dangerouslySetInnerHTML={{ __html: htmlWithBadge }} />
-      </body>
-    </html>
+    <DocumentViewer
+      slug={doc.slug}
+      title={doc.title}
+      html={doc.html}
+      hasPassword={false}
+      showBadge={doc.show_pagelink_badge}
+    />
   )
-}
-
-function getPagelinkBadge(): string {
-  return `
-<style>
-  .pagelink-badge {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(15, 15, 15, 0.9);
-    color: white;
-    padding: 10px 16px;
-    border-radius: 100px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.1);
-    transition: all 0.2s;
-    z-index: 10000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  }
-  .pagelink-badge:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-    background: rgba(59, 130, 246, 0.9);
-  }
-  .pagelink-badge svg {
-    width: 16px;
-    height: 16px;
-  }
-  @media print {
-    .pagelink-badge { display: none; }
-  }
-</style>
-<a href="https://pagelink.com" class="pagelink-badge" target="_blank" rel="noopener noreferrer">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-  </svg>
-  Made with Pagelink
-</a>`
 }
 
 function getDemoHtml(): string {

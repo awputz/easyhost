@@ -3,6 +3,7 @@ import { createClient, isSupabaseConfigured } from '@/lib/supabase/server'
 import bcrypt from 'bcryptjs'
 
 // POST - Verify password for a protected document
+// Supports both ID and slug as the [id] parameter
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -27,12 +28,33 @@ export async function POST(
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
     }
 
-    // Get document with password hash
-    const { data: document, error } = await supabase
-      .from('pagelink_documents')
-      .select('id, password_hash, html, title, theme')
-      .eq('id', id)
-      .single()
+    // Get document with password hash - try ID first, then slug
+    let document = null
+    let error = null
+
+    // Check if id looks like a UUID
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+
+    if (isUuid) {
+      const result = await supabase
+        .from('pagelink_documents')
+        .select('id, password_hash, html, title, theme, show_pagelink_badge')
+        .eq('id', id)
+        .single()
+      document = result.data
+      error = result.error
+    }
+
+    // If not found by ID or not a UUID, try by slug
+    if (!document) {
+      const result = await supabase
+        .from('pagelink_documents')
+        .select('id, password_hash, html, title, theme, show_pagelink_badge')
+        .eq('slug', id)
+        .single()
+      document = result.data
+      error = result.error
+    }
 
     if (error || !document) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 })
@@ -45,6 +67,7 @@ export async function POST(
         html: document.html,
         title: document.title,
         theme: document.theme,
+        showBadge: document.show_pagelink_badge,
       })
     }
 
@@ -55,11 +78,15 @@ export async function POST(
       return NextResponse.json({ verified: false, error: 'Invalid password' }, { status: 401 })
     }
 
+    // Increment view count on successful verification
+    await supabase.rpc('increment_pagelink_view_count', { doc_slug: id })
+
     return NextResponse.json({
       verified: true,
       html: document.html,
       title: document.title,
       theme: document.theme,
+      showBadge: document.show_pagelink_badge,
     })
   } catch (error) {
     console.error('Password verify error:', error)
