@@ -9,6 +9,14 @@ const FILE_SIZE_LIMITS = {
   enterprise: 1024 * 1024 * 1024, // 1GB
 }
 
+// Storage limits by plan (in bytes)
+const STORAGE_LIMITS = {
+  free: 100 * 1024 * 1024,           // 100MB
+  pro: 10 * 1024 * 1024 * 1024,      // 10GB
+  team: 100 * 1024 * 1024 * 1024,    // 100GB
+  enterprise: Infinity,               // Unlimited
+}
+
 // Allowed MIME types
 const ALLOWED_TYPES = [
   // Images
@@ -83,6 +91,20 @@ export async function POST(request: NextRequest) {
 
     const plan = (profile?.plan || 'free') as keyof typeof FILE_SIZE_LIMITS
     const maxFileSize = FILE_SIZE_LIMITS[plan]
+    const storageLimit = STORAGE_LIMITS[plan]
+    const currentStorage = profile?.storage_used_bytes || 0
+
+    // Check storage limit before processing file
+    if (storageLimit !== Infinity && currentStorage >= storageLimit) {
+      return NextResponse.json(
+        {
+          error: 'Storage limit reached',
+          message: `You've reached your ${formatBytes(storageLimit)} storage limit. Please upgrade your plan or delete some files.`,
+          code: 'STORAGE_LIMIT_EXCEEDED',
+        },
+        { status: 403 }
+      )
+    }
 
     // Parse form data
     const formData = await request.formData()
@@ -101,6 +123,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: `File too large. Max size for ${plan} plan is ${formatBytes(maxFileSize)}` },
         { status: 400 }
+      )
+    }
+
+    // Check if this upload would exceed storage limit
+    if (storageLimit !== Infinity && currentStorage + file.size > storageLimit) {
+      const remaining = storageLimit - currentStorage
+      return NextResponse.json(
+        {
+          error: 'Storage limit would be exceeded',
+          message: `This file (${formatBytes(file.size)}) would exceed your storage limit. You have ${formatBytes(remaining)} remaining.`,
+          code: 'STORAGE_LIMIT_EXCEEDED',
+        },
+        { status: 403 }
       )
     }
 
