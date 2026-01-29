@@ -24,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { DocumentSettings } from '@/components/pagelink/document-settings'
 import { VersionHistory } from '@/components/pagelink/version-history'
+import { ShareModal } from '@/components/pagelink/share-modal'
 
 interface ChatMessage {
   id: string
@@ -76,6 +77,7 @@ export default function DocumentEditPage({
   const [copied, setCopied] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -403,6 +405,15 @@ export default function DocumentEditPage({
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => setShowShareModal(true)}
+            title="Share"
+          >
+            <Share2 className="w-5 h-5 text-zinc-400" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setShowHistory(true)}
             title="Version History"
           >
@@ -645,6 +656,15 @@ export default function DocumentEditPage({
         onClose={() => setShowHistory(false)}
         documentId={document.id}
         onRestore={handleRestore}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        documentSlug={document.slug}
+        documentTitle={documentTitle}
+        documentHtml={documentHtml}
       />
     </div>
   )
