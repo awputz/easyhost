@@ -186,6 +186,60 @@ export interface AnalyticsEvent {
   created_at: string
 }
 
+// Pagelink Types
+export type PageTheme = 'professional-dark' | 'clean-light' | 'corporate-blue' | 'modern-minimal' | 'custom'
+
+export type PageTemplateType =
+  | 'pitch-deck'
+  | 'investment-memo'
+  | 'proposal'
+  | 'one-pager'
+  | 'case-study'
+  | 'report'
+  | 'newsletter'
+  | 'custom'
+
+export interface Page {
+  id: string
+  workspace_id: string
+  slug: string
+  title: string
+  description: string | null
+  html: string
+  template_type: PageTemplateType | null
+  theme: PageTheme
+  branding: {
+    logo_url?: string
+    primary_color?: string
+    secondary_color?: string
+    font_family?: string
+  }
+  is_public: boolean
+  password_hash: string | null
+  metadata: Record<string, unknown>
+  view_count: number
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PageVersion {
+  id: string
+  page_id: string
+  version_number: number
+  html: string
+  title: string | null
+  created_at: string
+}
+
+export interface PageChat {
+  id: string
+  page_id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  created_at: string
+}
+
 // Supabase Database type helper
 export interface Database {
   public: {
