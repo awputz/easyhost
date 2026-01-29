@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -17,16 +17,34 @@ import {
   Tablet,
   Smartphone,
   Share2,
-  Pencil,
+  History,
   Save,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DocumentSettings } from '@/components/pagelink/document-settings'
+import { VersionHistory } from '@/components/pagelink/version-history'
 
 interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
+}
+
+interface Document {
+  id: string
+  slug: string
+  title: string
+  html: string
+  theme: string
+  document_type: string | null
+  is_public: boolean
+  has_password: boolean
+  expires_at: string | null
+  allowed_emails: string[] | null
+  show_pagelink_badge: boolean
+  view_count: number
+  chat_history: ChatMessage[]
 }
 
 type DeviceSize = 'desktop' | 'tablet' | 'mobile'
@@ -37,42 +55,40 @@ const DEVICE_WIDTHS: Record<DeviceSize, string> = {
   mobile: '375px',
 }
 
-export default function CreatePage() {
+export default function DocumentEditPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = use(params)
   const router = useRouter()
+
+  const [document, setDocument] = useState<Document | null>(null)
+  const [loading, setLoading] = useState(true)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [documentHtml, setDocumentHtml] = useState('')
-  const [documentSlug, setDocumentSlug] = useState<string | null>(null)
-  const [documentTitle, setDocumentTitle] = useState('Untitled Document')
+  const [documentTitle, setDocumentTitle] = useState('')
   const [deviceSize, setDeviceSize] = useState<DeviceSize>('desktop')
   const [copied, setCopied] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Check for initial prompt from homepage
   useEffect(() => {
-    const initialPrompt = sessionStorage.getItem('pagelink_initial_prompt')
-    if (initialPrompt) {
-      sessionStorage.removeItem('pagelink_initial_prompt')
-      setInput(initialPrompt)
-      // Auto-submit after a short delay
-      setTimeout(() => {
-        handleSendMessage(initialPrompt)
-      }, 100)
-    }
-  }, [])
+    fetchDocument()
+  }, [slug])
 
-  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingContent])
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
@@ -80,15 +96,38 @@ export default function CreatePage() {
     }
   }, [input])
 
+  const fetchDocument = async () => {
+    try {
+      // First try to find by slug in pagelink_documents
+      const response = await fetch(`/api/pagelink/documents/by-slug/${slug}`)
+      if (response.ok) {
+        const doc = await response.json()
+        setDocument(doc)
+        setDocumentHtml(doc.html)
+        setDocumentTitle(doc.title)
+        if (doc.chat_history && Array.isArray(doc.chat_history)) {
+          setMessages(doc.chat_history)
+        }
+      } else {
+        // Document not found, redirect
+        router.push('/dashboard/pages')
+      }
+    } catch (error) {
+      console.error('Error fetching document:', error)
+      router.push('/dashboard/pages')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleSendMessage = useCallback(async (messageText?: string) => {
     const text = messageText || input
-    if (!text.trim() || isGenerating) return
+    if (!text.trim() || isGenerating || !document) return
 
     setInput('')
     setIsGenerating(true)
     setStreamingContent('')
 
-    // Add user message
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -103,7 +142,7 @@ export default function CreatePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text,
-          documentId: documentSlug,
+          documentId: document.id,
           existingHtml: documentHtml,
           conversationHistory: messages.map(m => ({
             role: m.role,
@@ -137,38 +176,30 @@ export default function CreatePage() {
                 fullResponse += data.content
                 setStreamingContent(fullResponse)
 
-                // Extract HTML from response
                 const htmlMatch = fullResponse.match(/```html\n([\s\S]*?)```/)?.[1] ||
                                   fullResponse.match(/<!DOCTYPE html[\s\S]*<\/html>/i)?.[0]
                 if (htmlMatch) {
                   extractedHtml = htmlMatch
                   setDocumentHtml(extractedHtml)
-                  // Extract title
+                  setHasUnsavedChanges(true)
                   const titleMatch = extractedHtml.match(/<title>([^<]+)<\/title>/i)
                   if (titleMatch) {
                     setDocumentTitle(titleMatch[1])
                   }
                 }
-              } else if (data.type === 'done') {
-                if (data.slug) {
-                  setDocumentSlug(data.slug)
-                }
-              } else if (data.type === 'error') {
-                console.error('Generation error:', data.message)
               }
             } catch {
-              // Skip invalid JSON lines
+              // Skip invalid JSON
             }
           }
         }
       }
 
-      // Add assistant message (summarized response)
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
         content: extractedHtml
-          ? "I've created your document. You can see the preview on the right. Let me know if you'd like any changes!"
+          ? "I've updated your document. Check the preview!"
           : fullResponse,
         timestamp: new Date(),
       }
@@ -178,7 +209,7 @@ export default function CreatePage() {
       const errorMessage: ChatMessage = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: 'Sorry, there was an error generating your document. Please try again.',
+        content: 'Sorry, there was an error. Please try again.',
         timestamp: new Date(),
       }
       setMessages(prev => [...prev, errorMessage])
@@ -186,7 +217,98 @@ export default function CreatePage() {
       setIsGenerating(false)
       setStreamingContent('')
     }
-  }, [input, isGenerating, documentSlug, documentHtml, messages])
+  }, [input, isGenerating, document, documentHtml, messages])
+
+  const handleSave = async () => {
+    if (!document || !documentHtml) return
+
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/pagelink/documents/${document.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: documentTitle,
+          html: documentHtml,
+        }),
+      })
+
+      if (response.ok) {
+        setHasUnsavedChanges(false)
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSettingsSave = async (settings: {
+    slug: string
+    isPublic: boolean
+    password: string | null
+    removePassword: boolean
+    expiresAt: string | null
+    allowedEmails: string[]
+    showPagelinkBadge: boolean
+    theme: string
+  }) => {
+    if (!document) return
+
+    const response = await fetch(`/api/pagelink/documents/${document.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slug: settings.slug,
+        isPublic: settings.isPublic,
+        password: settings.password,
+        removePassword: settings.removePassword,
+        expiresAt: settings.expiresAt,
+        allowedEmails: settings.allowedEmails.length > 0 ? settings.allowedEmails : null,
+        showPagelinkBadge: settings.showPagelinkBadge,
+        theme: settings.theme,
+      }),
+    })
+
+    if (response.ok) {
+      const updated = await response.json()
+      setDocument({ ...document, ...updated })
+      if (settings.slug !== slug) {
+        router.push(`/d/${settings.slug}`)
+      }
+    } else {
+      throw new Error('Failed to save settings')
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!document) return
+
+    const response = await fetch(`/api/pagelink/documents/${document.id}`, {
+      method: 'DELETE',
+    })
+
+    if (response.ok) {
+      router.push('/dashboard/pages')
+    }
+  }
+
+  const handleRestore = async (versionId: string) => {
+    if (!document) return
+
+    const response = await fetch(`/api/pagelink/documents/${document.id}/versions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ versionId }),
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      setDocumentHtml(data.html)
+      if (data.title) setDocumentTitle(data.title)
+      setHasUnsavedChanges(false)
+    }
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -196,8 +318,8 @@ export default function CreatePage() {
   }
 
   const handleCopyLink = async () => {
-    if (!documentSlug) return
-    const url = `${window.location.origin}/${documentSlug}`
+    if (!document) return
+    const url = `${window.location.origin}/${document.slug}`
     await navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -207,54 +329,26 @@ export default function CreatePage() {
     if (!documentHtml) return
     const blob = new Blob([documentHtml], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
+    const a = window.document.createElement('a')
     a.href = url
-    a.download = `${documentSlug || 'document'}.html`
+    a.download = `${document?.slug || 'document'}.html`
     a.click()
     URL.revokeObjectURL(url)
   }
 
-  const handleSaveAndEdit = async () => {
-    if (!documentHtml) return
-
-    setIsSaving(true)
-    try {
-      // If we already have a slug, the document is saved - go to edit page
-      if (documentSlug) {
-        router.push(`/d/${documentSlug}`)
-        return
-      }
-
-      // Otherwise, save new document via API
-      const response = await fetch('/api/pagelink/documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: documentTitle,
-          html: documentHtml,
-          document_type: 'custom',
-          theme: 'midnight',
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to save document')
-      }
-
-      const data = await response.json()
-      if (data.slug) {
-        setDocumentSlug(data.slug)
-        router.push(`/d/${data.slug}`)
-      }
-    } catch (error) {
-      console.error('Save error:', error)
-      alert('Failed to save document. Please try again.')
-    } finally {
-      setIsSaving(false)
-    }
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
+        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      </div>
+    )
   }
 
-  const publicUrl = documentSlug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/${documentSlug}` : null
+  if (!document) {
+    return null
+  }
+
+  const publicUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/${document.slug}`
 
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a]">
@@ -262,7 +356,7 @@ export default function CreatePage() {
       <header className="flex-shrink-0 h-14 border-b border-white/5 flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <Link
-            href="/"
+            href="/dashboard/pages"
             className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-zinc-400" />
@@ -272,110 +366,102 @@ export default function CreatePage() {
               <Sparkles className="h-3.5 w-3.5 text-white" />
             </div>
             <span className="font-medium text-white">{documentTitle}</span>
+            {hasUnsavedChanges && (
+              <span className="text-xs text-zinc-500">• Unsaved</span>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {publicUrl && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 rounded-lg border border-zinc-800">
-              <span className="text-sm text-zinc-400 font-mono truncate max-w-[200px]">
-                pagelink.com/{documentSlug}
-              </span>
-              <button
-                onClick={handleCopyLink}
-                className="p-1 hover:bg-zinc-700 rounded transition-colors"
-              >
-                {copied ? (
-                  <Check className="w-4 h-4 text-green-400" />
-                ) : (
-                  <Copy className="w-4 h-4 text-zinc-400" />
-                )}
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 rounded-lg border border-zinc-800">
+            <span className="text-sm text-zinc-400 font-mono truncate max-w-[180px]">
+              /{document.slug}
+            </span>
+            <button
+              onClick={handleCopyLink}
+              className="p-1 hover:bg-zinc-700 rounded transition-colors"
+            >
+              {copied ? (
+                <Check className="w-4 h-4 text-green-400" />
+              ) : (
+                <Copy className="w-4 h-4 text-zinc-400" />
+              )}
+            </button>
+          </div>
 
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setShowSettings(!showSettings)}
-            className={showSettings ? 'bg-zinc-800' : ''}
+            onClick={() => setShowHistory(true)}
+            title="Version History"
+          >
+            <History className="w-5 h-5 text-zinc-400" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSettings(true)}
+            title="Settings"
           >
             <Settings className="w-5 h-5 text-zinc-400" />
           </Button>
 
-          {documentHtml && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleDownload}
-              >
-                <Download className="w-5 h-5 text-zinc-400" />
-              </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleDownload}
+            title="Download HTML"
+          >
+            <Download className="w-5 h-5 text-zinc-400" />
+          </Button>
 
-              <Button
-                variant="outline"
-                className="border-zinc-700"
-                onClick={handleCopyLink}
-                disabled={!documentSlug}
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
-              </Button>
-
-              <Button
-                className="bg-blue-600 hover:bg-blue-500"
-                onClick={handleSaveAndEdit}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Pencil className="w-4 h-4 mr-2" />
-                )}
-                Edit & Settings
-              </Button>
-            </>
+          {hasUnsavedChanges && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="border-zinc-700"
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-1" />
+              )}
+              Save
+            </Button>
           )}
+
+          <a
+            href={publicUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button className="bg-blue-600 hover:bg-blue-500">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              View Live
+            </Button>
+          </a>
         </div>
       </header>
 
-      {/* Main Content - Two Panel Layout */}
+      {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Chat Panel */}
         <div className="w-[420px] flex-shrink-0 border-r border-white/5 flex flex-col bg-[#0a0a0a]">
-          {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.length === 0 && !streamingContent ? (
+            {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-6">
                 <div className="p-4 bg-gradient-to-br from-blue-500/20 to-violet-600/20 rounded-2xl mb-4">
                   <Sparkles className="w-8 h-8 text-blue-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2">
-                  Describe your document
+                  Edit with AI
                 </h3>
-                <p className="text-sm text-zinc-500 mb-6">
-                  Tell me what you want to create and I'll build a beautiful, shareable page for you.
+                <p className="text-sm text-zinc-500">
+                  Describe the changes you want to make
                 </p>
-                <div className="space-y-2 w-full">
-                  <p className="text-xs text-zinc-600 uppercase tracking-wide">Quick Examples</p>
-                  {[
-                    'Create a pitch deck for my AI startup',
-                    'Make an investment memo for 146 West 28th St',
-                    'Build a consulting proposal for a 3-month project',
-                  ].map((example, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        setInput(example)
-                        setTimeout(() => handleSendMessage(example), 100)
-                      }}
-                      className="w-full text-left p-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm text-zinc-300 transition-colors"
-                    >
-                      {example}
-                    </button>
-                  ))}
-                </div>
               </div>
             ) : (
               <>
@@ -411,7 +497,6 @@ export default function CreatePage() {
                   </div>
                 ))}
 
-                {/* Streaming Response */}
                 {streamingContent && (
                   <div className="flex gap-3">
                     <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center">
@@ -419,14 +504,13 @@ export default function CreatePage() {
                     </div>
                     <div className="flex-1 bg-zinc-900 rounded-lg p-3 border border-zinc-800">
                       <p className="text-sm text-zinc-300">
-                        Generating your document...
+                        Updating document...
                         <span className="inline-block w-2 h-4 bg-blue-500 animate-pulse ml-1" />
                       </p>
                     </div>
                   </div>
                 )}
 
-                {/* Loading */}
                 {isGenerating && !streamingContent && (
                   <div className="flex gap-3">
                     <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center">
@@ -447,7 +531,6 @@ export default function CreatePage() {
             )}
           </div>
 
-          {/* Input Area */}
           <div className="flex-shrink-0 p-4 border-t border-white/5">
             <div className="relative">
               <textarea
@@ -455,7 +538,7 @@ export default function CreatePage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Describe what you want to create or change..."
+                placeholder="Describe changes..."
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
                 rows={1}
                 disabled={isGenerating}
@@ -472,15 +555,11 @@ export default function CreatePage() {
                 )}
               </button>
             </div>
-            <p className="text-xs text-zinc-600 mt-2 text-center">
-              Enter to send • Shift+Enter for new line
-            </p>
           </div>
         </div>
 
         {/* Preview Panel */}
         <div className="flex-1 flex flex-col bg-zinc-950">
-          {/* Preview Header */}
           <div className="flex-shrink-0 px-4 py-2 border-b border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
@@ -488,7 +567,6 @@ export default function CreatePage() {
                 className={`p-2 rounded ${
                   deviceSize === 'desktop' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
                 }`}
-                title="Desktop"
               >
                 <Monitor className="w-4 h-4" />
               </button>
@@ -497,7 +575,6 @@ export default function CreatePage() {
                 className={`p-2 rounded ${
                   deviceSize === 'tablet' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
                 }`}
-                title="Tablet"
               >
                 <Tablet className="w-4 h-4" />
               </button>
@@ -506,57 +583,58 @@ export default function CreatePage() {
                 className={`p-2 rounded ${
                   deviceSize === 'mobile' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
                 }`}
-                title="Mobile"
               >
                 <Smartphone className="w-4 h-4" />
               </button>
             </div>
 
-            {publicUrl && (
-              <a
-                href={publicUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Open in new tab
-              </a>
-            )}
+            <span className="text-sm text-zinc-500">
+              {document.view_count} views
+            </span>
           </div>
 
-          {/* Preview Content */}
           <div className="flex-1 overflow-auto p-6 bg-zinc-900">
             <div
               className="h-full mx-auto transition-all duration-300"
               style={{ maxWidth: DEVICE_WIDTHS[deviceSize] }}
             >
-              {documentHtml ? (
-                <iframe
-                  srcDoc={documentHtml}
-                  className="w-full h-full bg-white rounded-lg shadow-2xl"
-                  title="Document Preview"
-                  sandbox="allow-scripts"
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center rounded-xl border-2 border-dashed border-zinc-800">
-                  <div className="text-center">
-                    <div className="w-20 h-20 mx-auto mb-4 bg-zinc-800 rounded-2xl flex items-center justify-center">
-                      <Sparkles className="w-10 h-10 text-zinc-600" />
-                    </div>
-                    <p className="text-zinc-400 text-lg font-medium">
-                      Your document will appear here
-                    </p>
-                    <p className="text-zinc-600 text-sm mt-2">
-                      Describe what you want to create in the chat
-                    </p>
-                  </div>
-                </div>
-              )}
+              <iframe
+                srcDoc={documentHtml}
+                className="w-full h-full bg-white rounded-lg shadow-2xl"
+                title="Document Preview"
+                sandbox="allow-scripts"
+              />
             </div>
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <DocumentSettings
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        document={{
+          id: document.id,
+          slug: document.slug,
+          title: documentTitle,
+          theme: document.theme,
+          isPublic: document.is_public,
+          hasPassword: document.has_password,
+          expiresAt: document.expires_at,
+          allowedEmails: document.allowed_emails,
+          showPagelinkBadge: document.show_pagelink_badge,
+        }}
+        onSave={handleSettingsSave}
+        onDelete={handleDelete}
+      />
+
+      {/* Version History Modal */}
+      <VersionHistory
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        documentId={document.id}
+        onRestore={handleRestore}
+      />
     </div>
   )
 }
