@@ -20,6 +20,17 @@ function getAdminClient() {
   return createClient(supabaseUrl, supabaseServiceKey)
 }
 
+interface SEOData {
+  metaTitle: string | null
+  metaDescription: string | null
+  ogImageUrl: string | null
+  ogType: string
+  twitterCard: string
+  canonicalUrl: string | null
+  noIndex: boolean
+  keywords: string | null
+}
+
 interface DocumentData {
   id: string
   slug: string
@@ -33,6 +44,7 @@ interface DocumentData {
   password_hash: string | null
   expires_at: string | null
   allowed_emails: string[] | null
+  seo: SEOData | null
 }
 
 interface DocumentAccessResult {
@@ -59,7 +71,7 @@ async function getDocumentAccess(slug: string): Promise<DocumentAccessResult> {
 
   const { data: doc, error } = await supabase
     .from('pagelink_documents')
-    .select('id, slug, title, html, theme, custom_branding, is_public, show_pagelink_badge, view_count, password_hash, expires_at, allowed_emails')
+    .select('id, slug, title, html, theme, custom_branding, is_public, show_pagelink_badge, view_count, password_hash, expires_at, allowed_emails, seo')
     .eq('slug', slug)
     .single()
 
@@ -117,6 +129,7 @@ function getDemoDocument(slug: string): DocumentData | null {
       password_hash: null,
       expires_at: null,
       allowed_emails: null,
+      seo: null,
     }
   }
   return null
@@ -156,15 +169,40 @@ export async function generateMetadata({
   }
 
   const doc = result.document!
-  return {
-    title: doc.title,
-    description: `View ${doc.title} on Pagelink`,
+  const seo = doc.seo
+  const title = seo?.metaTitle || doc.title
+  const description = seo?.metaDescription || `View ${doc.title} on Pagelink`
+  const ogType = (seo?.ogType || 'article') as 'article' | 'website' | 'profile'
+
+  const metadata: Metadata = {
+    title,
+    description,
+    keywords: seo?.keywords || undefined,
     openGraph: {
-      title: doc.title,
-      description: `View ${doc.title} on Pagelink`,
-      type: 'article',
+      title: seo?.metaTitle || doc.title,
+      description: seo?.metaDescription || `View ${doc.title} on Pagelink`,
+      type: ogType,
+      images: seo?.ogImageUrl ? [{ url: seo.ogImageUrl, width: 1200, height: 630 }] : undefined,
+    },
+    twitter: {
+      card: (seo?.twitterCard || 'summary_large_image') as 'summary' | 'summary_large_image',
+      title: seo?.metaTitle || doc.title,
+      description: seo?.metaDescription || `View ${doc.title} on Pagelink`,
+      images: seo?.ogImageUrl ? [seo.ogImageUrl] : undefined,
     },
   }
+
+  // Add canonical URL if set
+  if (seo?.canonicalUrl) {
+    metadata.alternates = { canonical: seo.canonicalUrl }
+  }
+
+  // Add noindex if set
+  if (seo?.noIndex) {
+    metadata.robots = { index: false, follow: true }
+  }
+
+  return metadata
 }
 
 export default async function PublicDocumentPage({

@@ -23,12 +23,14 @@ import {
   Files,
   Archive,
   Palette,
+  Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocumentSettings } from '@/components/pagelink/document-settings'
 import { VersionHistory } from '@/components/pagelink/version-history'
 import { ShareModal } from '@/components/pagelink/share-modal'
 import { BrandingSettings, BrandingConfig } from '@/components/pagelink/branding-settings'
+import { SEOSettings, SEOConfig } from '@/components/pagelink/seo-settings'
 
 interface ChatMessage {
   id: string
@@ -52,6 +54,7 @@ interface Document {
   view_count: number
   chat_history: ChatMessage[]
   custom_branding: BrandingConfig | null
+  seo: SEOConfig | null
 }
 
 type DeviceSize = 'desktop' | 'tablet' | 'mobile'
@@ -84,6 +87,7 @@ export default function DocumentEditPage({
   const [showHistory, setShowHistory] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showBranding, setShowBranding] = useState(false)
+  const [showSeo, setShowSeo] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
@@ -409,6 +413,23 @@ export default function DocumentEditPage({
     }
   }
 
+  const handleSeoSave = async (seo: SEOConfig) => {
+    if (!document) return
+
+    const response = await fetch(`/api/pagelink/documents/${document.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seo }),
+    })
+
+    if (response.ok) {
+      const updated = await response.json()
+      setDocument({ ...document, seo: updated.seo })
+    } else {
+      throw new Error('Failed to save SEO settings')
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -506,6 +527,15 @@ export default function DocumentEditPage({
             title="Branding"
           >
             <Palette className="w-5 h-5 text-zinc-400" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSeo(true)}
+            title="SEO Settings"
+          >
+            <Search className="w-5 h-5 text-zinc-400" />
           </Button>
 
           <Button
@@ -788,6 +818,19 @@ export default function DocumentEditPage({
           customCss: null,
         }}
         onSave={handleBrandingSave}
+      />
+
+      {/* SEO Modal */}
+      <SEOSettings
+        isOpen={showSeo}
+        onClose={() => setShowSeo(false)}
+        document={{
+          id: document.id,
+          slug: document.slug,
+          title: documentTitle,
+          seo: document.seo,
+        }}
+        onSave={handleSeoSave}
       />
     </div>
   )
