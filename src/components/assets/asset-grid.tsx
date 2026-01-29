@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { AssetCard } from './asset-card'
 import { AssetPreview } from './asset-preview'
 import { CreateLinkModal } from '@/components/links/create-link-modal'
+import { EmbedCodeModal } from '@/components/assets/embed-code-modal'
 import type { Asset } from '@/types'
 
 interface AssetGridProps {
@@ -15,6 +16,7 @@ export function AssetGrid({ assets, onAssetsChange }: AssetGridProps) {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null)
   const [createLinkAsset, setCreateLinkAsset] = useState<Asset | null>(null)
+  const [embedAsset, setEmbedAsset] = useState<Asset | null>(null)
 
   const handleDelete = async (asset: Asset) => {
     // For demo mode
@@ -49,6 +51,7 @@ export function AssetGrid({ assets, onAssetsChange }: AssetGridProps) {
             onPreview={setPreviewAsset}
             onDelete={handleDelete}
             onCreateLink={setCreateLinkAsset}
+            onEmbed={setEmbedAsset}
           />
         ))}
       </div>
@@ -65,6 +68,13 @@ export function AssetGrid({ assets, onAssetsChange }: AssetGridProps) {
         open={!!createLinkAsset}
         onOpenChange={(open) => !open && setCreateLinkAsset(null)}
         asset={createLinkAsset}
+      />
+
+      {/* Embed code modal */}
+      <EmbedCodeModal
+        open={!!embedAsset}
+        onOpenChange={(open) => !open && setEmbedAsset(null)}
+        asset={embedAsset}
       />
     </>
   )

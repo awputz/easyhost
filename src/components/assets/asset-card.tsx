@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { FileImage, FileVideo, FileText, FileCode, File, Copy, Download, ExternalLink, MoreHorizontal, Trash2, Eye, Link2 } from 'lucide-react'
+import { FileImage, FileVideo, FileText, FileCode, File, Copy, Download, ExternalLink, MoreHorizontal, Trash2, Eye, Link2, Code } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,6 +22,7 @@ interface AssetCardProps {
   onPreview?: (asset: Asset) => void
   onDelete?: (asset: Asset) => void
   onCreateLink?: (asset: Asset) => void
+  onEmbed?: (asset: Asset) => void
 }
 
 export function AssetCard({
@@ -31,6 +32,7 @@ export function AssetCard({
   onPreview,
   onDelete,
   onCreateLink,
+  onEmbed,
 }: AssetCardProps) {
   const [imageError, setImageError] = useState(false)
 
@@ -181,6 +183,10 @@ export function AssetCard({
               <DropdownMenuItem onClick={() => onCreateLink?.(asset)}>
                 <Link2 className="mr-2 h-4 w-4" />
                 Create short link
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEmbed?.(asset)}>
+                <Code className="mr-2 h-4 w-4" />
+                Embed code
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
