@@ -20,6 +20,8 @@ import {
   History,
   Save,
   BarChart3,
+  Files,
+  Archive,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocumentSettings } from '@/components/pagelink/document-settings'
@@ -80,6 +82,8 @@ export default function DocumentEditPage({
   const [showShareModal, setShowShareModal] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDuplicating, setIsDuplicating] = useState(false)
+  const [isArchiving, setIsArchiving] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -339,6 +343,49 @@ export default function DocumentEditPage({
     URL.revokeObjectURL(url)
   }
 
+  const handleDuplicate = async () => {
+    if (!document) return
+
+    setIsDuplicating(true)
+    try {
+      const response = await fetch(`/api/pagelink/documents/${document.id}/duplicate`, {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        router.push(`/d/${data.slug}`)
+      }
+    } catch (error) {
+      console.error('Duplicate error:', error)
+    } finally {
+      setIsDuplicating(false)
+    }
+  }
+
+  const handleArchive = async () => {
+    if (!document) return
+
+    if (!confirm('Archive this document? It will be moved to your archived documents.')) {
+      return
+    }
+
+    setIsArchiving(true)
+    try {
+      const response = await fetch(`/api/pagelink/documents/${document.id}/archive`, {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        router.push('/dashboard/pages')
+      }
+    } catch (error) {
+      console.error('Archive error:', error)
+    } finally {
+      setIsArchiving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -427,6 +474,34 @@ export default function DocumentEditPage({
             title="Settings"
           >
             <Settings className="w-5 h-5 text-zinc-400" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleDuplicate}
+            disabled={isDuplicating}
+            title="Duplicate"
+          >
+            {isDuplicating ? (
+              <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" />
+            ) : (
+              <Files className="w-5 h-5 text-zinc-400" />
+            )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleArchive}
+            disabled={isArchiving}
+            title="Archive"
+          >
+            {isArchiving ? (
+              <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" />
+            ) : (
+              <Archive className="w-5 h-5 text-zinc-400" />
+            )}
           </Button>
 
           <Button

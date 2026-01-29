@@ -2,10 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server'
 
 // GET - List all documents for the current user
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const url = new URL(request.url)
+    const showArchived = url.searchParams.get('archived') === 'true'
+    const search = url.searchParams.get('search') || ''
+    const sortBy = url.searchParams.get('sortBy') || 'updated_at'
+    const sortOrder = url.searchParams.get('sortOrder') === 'asc' ? true : false
+
     if (!isSupabaseConfigured()) {
-      return NextResponse.json(getDemoDocuments())
+      let docs = getDemoDocuments()
+      if (search) {
+        docs = docs.filter(d => d.title.toLowerCase().includes(search.toLowerCase()))
+      }
+      return NextResponse.json(docs)
     }
 
     const supabase = await createClient()
@@ -18,11 +28,29 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: documents, error } = await supabase
+    let query = supabase
       .from('pagelink_documents')
-      .select('id, slug, title, document_type, theme, is_public, view_count, created_at, updated_at')
+      .select('id, slug, title, document_type, theme, is_public, view_count, created_at, updated_at, archived_at')
       .eq('user_id', user.id)
-      .order('updated_at', { ascending: false })
+
+    // Filter by archived status
+    if (showArchived) {
+      query = query.not('archived_at', 'is', null)
+    } else {
+      query = query.is('archived_at', null)
+    }
+
+    // Search filter
+    if (search) {
+      query = query.ilike('title', `%${search}%`)
+    }
+
+    // Sorting
+    const validSortFields = ['updated_at', 'created_at', 'title', 'view_count']
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'updated_at'
+    query = query.order(sortField, { ascending: sortOrder })
+
+    const { data: documents, error } = await query
 
     if (error) {
       console.error('Error fetching documents:', error)
@@ -163,6 +191,7 @@ function getDemoDocuments() {
       view_count: 47,
       created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
       updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      archived_at: null,
     },
     {
       id: 'demo-2',
@@ -174,6 +203,7 @@ function getDemoDocuments() {
       view_count: 23,
       created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
       updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      archived_at: null,
     },
     {
       id: 'demo-3',
@@ -185,6 +215,7 @@ function getDemoDocuments() {
       view_count: 12,
       created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
       updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      archived_at: null,
     },
   ]
 }
