@@ -1,4 +1,4 @@
-// Database types for EZ-Host.ai
+// Database types for Pagelink
 
 export type Plan = 'free' | 'pro' | 'team' | 'enterprise'
 

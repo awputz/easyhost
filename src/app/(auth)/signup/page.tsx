@@ -92,7 +92,7 @@ export default function SignupPage() {
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
         <CardDescription>
-          Get started with EZ-Host.ai for free. No credit card required.
+          Get started with Pagelink for free. No credit card required.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

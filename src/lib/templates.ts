@@ -1,4 +1,4 @@
-// Template utility functions for EZ-Host.ai
+// Template utility functions for Pagelink
 
 import type { TemplateVariable } from '@/types'
 

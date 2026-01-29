@@ -184,7 +184,7 @@ export default function ShortLinkPage() {
           <p className="text-xs text-muted-foreground">
             Powered by{' '}
             <a href="/" className="text-primary hover:underline">
-              EZ-Host.ai
+              Pagelink
             </a>
           </p>
         </div>
