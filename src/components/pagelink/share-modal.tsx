@@ -13,6 +13,8 @@ import {
   Twitter,
   Linkedin,
   ExternalLink,
+  FileText,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -22,6 +24,7 @@ interface ShareModalProps {
   documentSlug: string
   documentTitle: string
   documentHtml?: string
+  documentId?: string
 }
 
 type ShareTab = 'link' | 'embed' | 'export'
@@ -32,10 +35,13 @@ export function ShareModal({
   documentSlug,
   documentTitle,
   documentHtml,
+  documentId,
 }: ShareModalProps) {
   const [activeTab, setActiveTab] = useState<ShareTab>('link')
   const [copied, setCopied] = useState<string | null>(null)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
+  const [pdfError, setPdfError] = useState<string | null>(null)
 
   const publicUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/${documentSlug}`
@@ -82,6 +88,46 @@ export function ShareModal({
     a.download = `${documentSlug}.html`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!documentHtml || !documentId) return
+
+    setIsExportingPdf(true)
+    setPdfError(null)
+
+    try {
+      const response = await fetch(`/api/pagelink/documents/${documentId}/export/pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          html: documentHtml,
+          title: documentTitle,
+          format: 'A4',
+          orientation: 'portrait',
+          printBackground: true,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to generate PDF')
+      }
+
+      // Download the PDF
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${documentSlug}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('PDF export error:', error)
+      setPdfError(error instanceof Error ? error.message : 'Failed to generate PDF')
+    } finally {
+      setIsExportingPdf(false)
+    }
   }
 
   const embedCode = `<iframe src="${publicUrl}" width="100%" height="600" frameborder="0" style="border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);"></iframe>`
@@ -285,6 +331,37 @@ export function ShareModal({
 
           {activeTab === 'export' && (
             <div className="space-y-4">
+              {/* PDF Error */}
+              {pdfError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+                  {pdfError}
+                </div>
+              )}
+
+              {/* PDF Download */}
+              <button
+                onClick={handleDownloadPdf}
+                disabled={!documentHtml || !documentId || isExportingPdf}
+                className="w-full flex items-center gap-4 p-4 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors text-left"
+              >
+                <div className="w-12 h-12 bg-red-500/10 rounded-lg flex items-center justify-center">
+                  {isExportingPdf ? (
+                    <Loader2 className="w-6 h-6 text-red-400 animate-spin" />
+                  ) : (
+                    <FileText className="w-6 h-6 text-red-400" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-white">
+                    {isExportingPdf ? 'Generating PDF...' : 'Download PDF'}
+                  </div>
+                  <div className="text-sm text-zinc-500">
+                    High-quality PDF with preserved styling
+                  </div>
+                </div>
+                <Download className="w-5 h-5 text-zinc-500" />
+              </button>
+
               {/* HTML Download */}
               <button
                 onClick={handleDownloadHtml}

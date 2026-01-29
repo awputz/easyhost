@@ -802,6 +802,7 @@ export default function DocumentEditPage({
         documentSlug={document.slug}
         documentTitle={documentTitle}
         documentHtml={documentHtml}
+        documentId={document.id}
       />
 
       {/* Branding Modal */}
