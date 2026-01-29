@@ -74,6 +74,7 @@ export async function PUT(
       allowedEmails,
       showPagelinkBadge,
       customBranding,
+      seo,
     } = body
 
     if (!isSupabaseConfigured()) {
@@ -112,6 +113,7 @@ export async function PUT(
     if (allowedEmails !== undefined) updates.allowed_emails = allowedEmails
     if (showPagelinkBadge !== undefined) updates.show_pagelink_badge = showPagelinkBadge
     if (customBranding !== undefined) updates.custom_branding = customBranding
+    if (seo !== undefined) updates.seo = seo
 
     // Handle password
     if (removePassword) {
