@@ -35,10 +35,12 @@ import {
   HardDrive,
   Gauge,
   Calendar,
+  CreditCard,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format, parseISO } from 'date-fns'
 import { InviteMemberModal } from '@/components/settings/invite-member-modal'
+import { BillingTab } from '@/components/settings/billing-tab'
 import type { Profile, Workspace, WorkspaceRole } from '@/types'
 
 interface TeamMember {
@@ -241,6 +243,10 @@ export default function SettingsPage() {
           <TabsTrigger value="team" className="gap-2">
             <Users className="h-4 w-4" />
             Team
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="gap-2">
+            <CreditCard className="h-4 w-4" />
+            Billing
           </TabsTrigger>
         </TabsList>
 
@@ -615,6 +621,11 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Billing Tab */}
+        <TabsContent value="billing">
+          <BillingTab />
         </TabsContent>
       </Tabs>
 
