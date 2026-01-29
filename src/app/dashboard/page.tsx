@@ -12,6 +12,7 @@ import { AssetPreview } from '@/components/assets/asset-preview'
 import { BulkActionsBar } from '@/components/assets/bulk-actions-bar'
 import { FolderBreadcrumb } from '@/components/folders/folder-breadcrumb'
 import { CreateFolderModal } from '@/components/folders/create-folder-modal'
+import { CreateLinkModal } from '@/components/links/create-link-modal'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 import type { Asset } from '@/types'
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null)
+  const [createLinkAsset, setCreateLinkAsset] = useState<Asset | null>(null)
 
   const fetchAssets = useCallback(async () => {
     try {
@@ -232,6 +234,7 @@ export default function DashboardPage() {
             onSelectAll={handleSelectAll}
             onPreview={setPreviewAsset}
             onDelete={handleDeleteAsset}
+            onCreateLink={setCreateLinkAsset}
           />
         )
       ) : searchQuery ? (
@@ -301,6 +304,12 @@ export default function DashboardPage() {
         onOpenChange={(open) => !open && setPreviewAsset(null)}
         assets={filteredAssets}
         onNavigate={setPreviewAsset}
+      />
+
+      <CreateLinkModal
+        open={!!createLinkAsset}
+        onOpenChange={(open) => !open && setCreateLinkAsset(null)}
+        asset={createLinkAsset}
       />
     </div>
   )

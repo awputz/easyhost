@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileImage, FileVideo, FileText, FileCode, File, MoreHorizontal, Copy, Download, Eye, Trash2, ExternalLink } from 'lucide-react'
+import { FileImage, FileVideo, FileText, FileCode, File, MoreHorizontal, Copy, Download, Eye, Trash2, ExternalLink, Link2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -22,6 +22,7 @@ interface AssetListProps {
   onSelectAll: (selected: boolean) => void
   onPreview: (asset: Asset) => void
   onDelete: (asset: Asset) => void
+  onCreateLink?: (asset: Asset) => void
 }
 
 export function AssetList({
@@ -31,6 +32,7 @@ export function AssetList({
   onSelectAll,
   onPreview,
   onDelete,
+  onCreateLink,
 }: AssetListProps) {
   const allSelected = assets.length > 0 && assets.every((a) => selectedIds.has(a.id))
   const someSelected = assets.some((a) => selectedIds.has(a.id))
@@ -131,6 +133,10 @@ export function AssetList({
                   <DropdownMenuItem>
                     <Download className="mr-2 h-4 w-4" />
                     Download
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onCreateLink?.(asset)}>
+                    <Link2 className="mr-2 h-4 w-4" />
+                    Create short link
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
