@@ -48,9 +48,15 @@ interface DocumentSettings {
 }
 
 const THEMES = [
-  { id: 'midnight', name: 'Midnight Navy', color: '#0a1628' },
+  { id: 'midnight', name: 'Midnight', color: '#0a1628' },
   { id: 'charcoal', name: 'Charcoal', color: '#2C2C2C' },
   { id: 'slate', name: 'Slate', color: '#3D4F5F' },
+  { id: 'obsidian', name: 'Obsidian', color: '#0f0f0f' },
+  { id: 'ocean', name: 'Ocean', color: '#0c2d48' },
+  { id: 'forest', name: 'Forest', color: '#1a3c34' },
+  { id: 'wine', name: 'Wine', color: '#4a1c2e' },
+  { id: 'cream', name: 'Cream', color: '#f5f5dc' },
+  { id: 'white', name: 'White', color: '#ffffff' },
 ]
 
 export function DocumentSettings({

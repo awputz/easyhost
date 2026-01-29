@@ -210,6 +210,7 @@ export default async function PublicDocumentPage({
         html={null}
         hasPassword={true}
         showBadge={result.document.show_pagelink_badge}
+        branding={result.document.custom_branding}
       />
     )
   }
@@ -223,6 +224,7 @@ export default async function PublicDocumentPage({
       html={doc.html}
       hasPassword={false}
       showBadge={doc.show_pagelink_badge}
+      branding={doc.custom_branding}
     />
   )
 }

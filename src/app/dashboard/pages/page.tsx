@@ -24,6 +24,9 @@ import {
   Sparkles,
   Shield,
   Clock,
+  Archive,
+  ArchiveRestore,
+  Files,
 } from 'lucide-react'
 
 type ViewMode = 'grid' | 'list'
@@ -41,6 +44,7 @@ interface PagelinkDocument {
   view_count: number
   created_at: string
   updated_at: string
+  archived_at: string | null
 }
 
 const DOCUMENT_TYPE_ICONS: Record<string, typeof FileText> = {
@@ -60,14 +64,18 @@ export default function PagesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [searchQuery, setSearchQuery] = useState('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
 
   useEffect(() => {
     fetchDocuments()
-  }, [])
+  }, [showArchived])
 
   const fetchDocuments = async () => {
+    setLoading(true)
     try {
-      const response = await fetch('/api/pagelink/documents')
+      const params = new URLSearchParams()
+      if (showArchived) params.set('archived', 'true')
+      const response = await fetch(`/api/pagelink/documents?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
         setDocuments(Array.isArray(data) ? data : [])
@@ -87,7 +95,7 @@ export default function PagesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) return
+    if (!confirm('Are you sure you want to permanently delete this document?')) return
 
     try {
       const response = await fetch(`/api/pagelink/documents/${id}`, {
@@ -98,6 +106,45 @@ export default function PagesPage() {
       }
     } catch (error) {
       console.error('Error deleting document:', error)
+    }
+  }
+
+  const handleArchive = async (id: string) => {
+    try {
+      const response = await fetch(`/api/pagelink/documents/${id}/archive`, {
+        method: 'POST',
+      })
+      if (response.ok) {
+        setDocuments(documents.filter(d => d.id !== id))
+      }
+    } catch (error) {
+      console.error('Error archiving document:', error)
+    }
+  }
+
+  const handleRestore = async (id: string) => {
+    try {
+      const response = await fetch(`/api/pagelink/documents/${id}/archive`, {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        setDocuments(documents.filter(d => d.id !== id))
+      }
+    } catch (error) {
+      console.error('Error restoring document:', error)
+    }
+  }
+
+  const handleDuplicate = async (id: string) => {
+    try {
+      const response = await fetch(`/api/pagelink/documents/${id}/duplicate`, {
+        method: 'POST',
+      })
+      if (response.ok) {
+        fetchDocuments()
+      }
+    } catch (error) {
+      console.error('Error duplicating document:', error)
     }
   }
 
@@ -124,6 +171,32 @@ export default function PagesPage() {
             <Plus className="w-4 h-4" />
             Create Page
           </Link>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center gap-1 mb-6 border-b border-zinc-800">
+          <button
+            onClick={() => setShowArchived(false)}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              !showArchived
+                ? 'text-white border-blue-500'
+                : 'text-zinc-500 border-transparent hover:text-zinc-300'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Active
+          </button>
+          <button
+            onClick={() => setShowArchived(true)}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              showArchived
+                ? 'text-white border-blue-500'
+                : 'text-zinc-500 border-transparent hover:text-zinc-300'
+            }`}
+          >
+            <Archive className="w-4 h-4" />
+            Archived
+          </button>
         </div>
 
         {/* Search and View Toggle */}
@@ -172,15 +245,23 @@ export default function PagesPage() {
         ) : filteredDocuments.length === 0 ? (
           <div className="text-center py-16">
             <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500/20 to-violet-600/20 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-blue-400" />
+              {showArchived ? (
+                <Archive className="w-8 h-8 text-zinc-400" />
+              ) : (
+                <Sparkles className="w-8 h-8 text-blue-400" />
+              )}
             </div>
-            <h3 className="text-lg font-medium mb-2">No pages yet</h3>
+            <h3 className="text-lg font-medium mb-2">
+              {showArchived ? 'No archived pages' : 'No pages yet'}
+            </h3>
             <p className="text-zinc-500 mb-6">
               {searchQuery
                 ? 'No pages match your search'
-                : 'Create your first AI-generated document'}
+                : showArchived
+                  ? 'Documents you archive will appear here'
+                  : 'Create your first AI-generated document'}
             </p>
-            {!searchQuery && (
+            {!searchQuery && !showArchived && (
               <Link
                 href="/create"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors"
@@ -198,7 +279,11 @@ export default function PagesPage() {
                 document={doc}
                 onCopyLink={() => handleCopyLink(doc.slug, doc.id)}
                 onDelete={() => handleDelete(doc.id)}
+                onArchive={() => handleArchive(doc.id)}
+                onRestore={() => handleRestore(doc.id)}
+                onDuplicate={() => handleDuplicate(doc.id)}
                 isCopied={copiedId === doc.id}
+                isArchived={showArchived}
               />
             ))}
           </div>
@@ -232,7 +317,11 @@ export default function PagesPage() {
                     document={doc}
                     onCopyLink={() => handleCopyLink(doc.slug, doc.id)}
                     onDelete={() => handleDelete(doc.id)}
+                    onArchive={() => handleArchive(doc.id)}
+                    onRestore={() => handleRestore(doc.id)}
+                    onDuplicate={() => handleDuplicate(doc.id)}
                     isCopied={copiedId === doc.id}
+                    isArchived={showArchived}
                   />
                 ))}
               </tbody>
@@ -248,12 +337,20 @@ function DocumentCard({
   document,
   onCopyLink,
   onDelete,
+  onArchive,
+  onRestore,
+  onDuplicate,
   isCopied,
+  isArchived,
 }: {
   document: PagelinkDocument
   onCopyLink: () => void
   onDelete: () => void
+  onArchive: () => void
+  onRestore: () => void
+  onDuplicate: () => void
   isCopied: boolean
+  isArchived: boolean
 }) {
   const [showMenu, setShowMenu] = useState(false)
   const Icon = DOCUMENT_TYPE_ICONS[document.document_type] || FileText
@@ -267,11 +364,17 @@ function DocumentCard({
         <div className="aspect-[16/10] bg-zinc-950 relative overflow-hidden">
           <div className="absolute inset-0 p-4 scale-[0.3] origin-top-left w-[333%] h-[333%]">
             <div
-              dangerouslySetInnerHTML={{ __html: document.html.slice(0, 500) }}
+              dangerouslySetInnerHTML={{ __html: document.html?.slice(0, 500) || '' }}
               className="text-white pointer-events-none"
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 to-transparent" />
+          {isArchived && (
+            <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-zinc-800/90 rounded text-xs text-zinc-400">
+              <Archive className="w-3 h-3" />
+              Archived
+            </div>
+          )}
         </div>
       </Link>
 
@@ -305,7 +408,7 @@ function DocumentCard({
                     Edit
                   </Link>
                   <button
-                    onClick={onCopyLink}
+                    onClick={() => { onCopyLink(); setShowMenu(false); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-700 transition-colors"
                   >
                     <Copy className="w-4 h-4" />
@@ -320,14 +423,42 @@ function DocumentCard({
                     <ExternalLink className="w-4 h-4" />
                     Open
                   </a>
+                  {!isArchived && (
+                    <button
+                      onClick={() => { onDuplicate(); setShowMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-700 transition-colors"
+                    >
+                      <Files className="w-4 h-4" />
+                      Duplicate
+                    </button>
+                  )}
                   <hr className="my-1 border-zinc-700" />
-                  <button
-                    onClick={onDelete}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-zinc-700 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </button>
+                  {isArchived ? (
+                    <>
+                      <button
+                        onClick={() => { onRestore(); setShowMenu(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-400 hover:bg-zinc-700 transition-colors"
+                      >
+                        <ArchiveRestore className="w-4 h-4" />
+                        Restore
+                      </button>
+                      <button
+                        onClick={() => { onDelete(); setShowMenu(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-zinc-700 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Forever
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => { onArchive(); setShowMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-400 hover:bg-zinc-700 transition-colors"
+                    >
+                      <Archive className="w-4 h-4" />
+                      Archive
+                    </button>
+                  )}
                 </div>
               </>
             )}
@@ -385,12 +516,20 @@ function DocumentRow({
   document,
   onCopyLink,
   onDelete,
+  onArchive,
+  onRestore,
+  onDuplicate,
   isCopied,
+  isArchived,
 }: {
   document: PagelinkDocument
   onCopyLink: () => void
   onDelete: () => void
+  onArchive: () => void
+  onRestore: () => void
+  onDuplicate: () => void
   isCopied: boolean
+  isArchived: boolean
 }) {
   const [showMenu, setShowMenu] = useState(false)
   const Icon = DOCUMENT_TYPE_ICONS[document.document_type] || FileText
@@ -400,12 +539,19 @@ function DocumentRow({
   return (
     <tr className="border-b border-zinc-800 last:border-0 hover:bg-zinc-800/50 transition-colors">
       <td className="px-4 py-3">
-        <Link
-          href={`/d/${document.slug}`}
-          className="font-medium hover:text-blue-400 transition-colors"
-        >
-          {document.title}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/d/${document.slug}`}
+            className="font-medium hover:text-blue-400 transition-colors"
+          >
+            {document.title}
+          </Link>
+          {isArchived && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-zinc-700 text-zinc-400">
+              <Archive className="w-3 h-3" />
+            </span>
+          )}
+        </div>
       </td>
       <td className="px-4 py-3">
         <span className="flex items-center gap-1.5 text-sm text-zinc-400">
@@ -488,7 +634,7 @@ function DocumentRow({
                       className="fixed inset-0 z-10"
                       onClick={() => setShowMenu(false)}
                     />
-                    <div className="absolute right-0 top-full mt-1 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 py-1 w-32 z-20">
+                    <div className="absolute right-0 top-full mt-1 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 py-1 w-40 z-20">
                       <Link
                         href={`/d/${document.slug}`}
                         className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-700 transition-colors"
@@ -496,13 +642,42 @@ function DocumentRow({
                         <Edit className="w-4 h-4" />
                         Edit
                       </Link>
-                      <button
-                        onClick={onDelete}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-zinc-700 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete
-                      </button>
+                      {!isArchived && (
+                        <button
+                          onClick={() => { onDuplicate(); setShowMenu(false); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-700 transition-colors"
+                        >
+                          <Files className="w-4 h-4" />
+                          Duplicate
+                        </button>
+                      )}
+                      <hr className="my-1 border-zinc-700" />
+                      {isArchived ? (
+                        <>
+                          <button
+                            onClick={() => { onRestore(); setShowMenu(false); }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-400 hover:bg-zinc-700 transition-colors"
+                          >
+                            <ArchiveRestore className="w-4 h-4" />
+                            Restore
+                          </button>
+                          <button
+                            onClick={() => { onDelete(); setShowMenu(false); }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-zinc-700 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Forever
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => { onArchive(); setShowMenu(false); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-400 hover:bg-zinc-700 transition-colors"
+                        >
+                          <Archive className="w-4 h-4" />
+                          Archive
+                        </button>
+                      )}
                     </div>
                   </>
                 )}
