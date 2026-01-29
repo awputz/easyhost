@@ -22,11 +22,13 @@ import {
   BarChart3,
   Files,
   Archive,
+  Palette,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocumentSettings } from '@/components/pagelink/document-settings'
 import { VersionHistory } from '@/components/pagelink/version-history'
 import { ShareModal } from '@/components/pagelink/share-modal'
+import { BrandingSettings, BrandingConfig } from '@/components/pagelink/branding-settings'
 
 interface ChatMessage {
   id: string
@@ -49,6 +51,7 @@ interface Document {
   show_pagelink_badge: boolean
   view_count: number
   chat_history: ChatMessage[]
+  custom_branding: BrandingConfig | null
 }
 
 type DeviceSize = 'desktop' | 'tablet' | 'mobile'
@@ -80,6 +83,7 @@ export default function DocumentEditPage({
   const [showSettings, setShowSettings] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showBranding, setShowBranding] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
@@ -386,6 +390,25 @@ export default function DocumentEditPage({
     }
   }
 
+  const handleBrandingSave = async (branding: BrandingConfig) => {
+    if (!document) return
+
+    const response = await fetch(`/api/pagelink/documents/${document.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customBranding: branding,
+      }),
+    })
+
+    if (response.ok) {
+      const updated = await response.json()
+      setDocument({ ...document, custom_branding: updated.custom_branding })
+    } else {
+      throw new Error('Failed to save branding')
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -474,6 +497,15 @@ export default function DocumentEditPage({
             title="Settings"
           >
             <Settings className="w-5 h-5 text-zinc-400" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowBranding(true)}
+            title="Branding"
+          >
+            <Palette className="w-5 h-5 text-zinc-400" />
           </Button>
 
           <Button
@@ -740,6 +772,22 @@ export default function DocumentEditPage({
         documentSlug={document.slug}
         documentTitle={documentTitle}
         documentHtml={documentHtml}
+      />
+
+      {/* Branding Modal */}
+      <BrandingSettings
+        isOpen={showBranding}
+        onClose={() => setShowBranding(false)}
+        branding={document.custom_branding || {
+          logoUrl: null,
+          primaryColor: '#3B82F6',
+          accentColor: '#60A5FA',
+          fontFamily: 'inter',
+          footerText: null,
+          footerLink: null,
+          customCss: null,
+        }}
+        onSave={handleBrandingSave}
       />
     </div>
   )

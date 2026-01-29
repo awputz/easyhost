@@ -3,12 +3,45 @@
 import { useState } from 'react'
 import { PasswordGate } from './password-gate'
 
+export interface BrandingConfig {
+  logoUrl?: string | null
+  primaryColor?: string
+  accentColor?: string
+  fontFamily?: string
+  footerText?: string | null
+  footerLink?: string | null
+  customCss?: string | null
+}
+
 interface DocumentViewerProps {
   slug: string
   title: string
   html: string | null
   hasPassword: boolean
   showBadge: boolean
+  branding?: BrandingConfig | null
+}
+
+const FONT_IMPORTS: Record<string, string> = {
+  inter: "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');",
+  roboto: "@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');",
+  poppins: "@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');",
+  playfair: "@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');",
+  montserrat: "@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');",
+  opensans: "@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap');",
+  lato: "@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');",
+  merriweather: "@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap');",
+}
+
+const FONT_FAMILIES: Record<string, string> = {
+  inter: "'Inter', sans-serif",
+  roboto: "'Roboto', sans-serif",
+  poppins: "'Poppins', sans-serif",
+  playfair: "'Playfair Display', serif",
+  montserrat: "'Montserrat', sans-serif",
+  opensans: "'Open Sans', sans-serif",
+  lato: "'Lato', sans-serif",
+  merriweather: "'Merriweather', serif",
 }
 
 export function DocumentViewer({
@@ -17,6 +50,7 @@ export function DocumentViewer({
   html: initialHtml,
   hasPassword,
   showBadge,
+  branding,
 }: DocumentViewerProps) {
   const [html, setHtml] = useState(initialHtml)
 
@@ -36,17 +70,135 @@ export function DocumentViewer({
     return null
   }
 
+  // Apply branding styles
+  let processedHtml = html
+
+  // Add branding styles
+  if (branding) {
+    const brandingStyles = getBrandingStyles(branding)
+    processedHtml = processedHtml.replace('</head>', `${brandingStyles}</head>`)
+  }
+
+  // Add custom footer if configured
+  if (branding?.footerText) {
+    const footer = getCustomFooter(branding)
+    processedHtml = processedHtml.replace('</body>', `${footer}</body>`)
+  }
+
   // Add Pagelink badge if enabled
-  const htmlWithBadge = showBadge
-    ? html.replace('</body>', `${getPagelinkBadge()}</body>`)
-    : html
+  if (showBadge) {
+    processedHtml = processedHtml.replace('</body>', `${getPagelinkBadge()}</body>`)
+  }
 
   return (
     <div
-      dangerouslySetInnerHTML={{ __html: htmlWithBadge }}
+      dangerouslySetInnerHTML={{ __html: processedHtml }}
       style={{ minHeight: '100vh' }}
     />
   )
+}
+
+function getBrandingStyles(branding: BrandingConfig): string {
+  const fontImport = branding.fontFamily ? FONT_IMPORTS[branding.fontFamily] || '' : ''
+  const fontFamily = branding.fontFamily ? FONT_FAMILIES[branding.fontFamily] || 'inherit' : 'inherit'
+  const primary = branding.primaryColor || '#3B82F6'
+  const accent = branding.accentColor || '#60A5FA'
+
+  return `
+<style>
+  ${fontImport}
+
+  /* Pagelink Branding Variables */
+  :root {
+    --pl-primary: ${primary};
+    --pl-accent: ${accent};
+    --pl-font: ${fontFamily};
+  }
+
+  /* Apply brand font to body */
+  body {
+    font-family: ${fontFamily};
+  }
+
+  /* Brand color for links */
+  a {
+    color: ${primary};
+  }
+  a:hover {
+    color: ${accent};
+  }
+
+  /* Brand logo header */
+  ${branding.logoUrl ? `
+  .pagelink-brand-header {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 9999;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .pagelink-brand-header img {
+    height: 28px;
+    width: auto;
+    display: block;
+  }
+  @media print {
+    .pagelink-brand-header { display: none; }
+  }
+  ` : ''}
+
+  /* Custom CSS */
+  ${branding.customCss || ''}
+</style>
+${branding.logoUrl ? `
+<div class="pagelink-brand-header">
+  <img src="${branding.logoUrl}" alt="Logo" />
+</div>
+` : ''}
+`
+}
+
+function getCustomFooter(branding: BrandingConfig): string {
+  const primary = branding.primaryColor || '#3B82F6'
+  const fontFamily = branding.fontFamily ? FONT_FAMILIES[branding.fontFamily] || 'inherit' : 'inherit'
+
+  return `
+<style>
+  .pagelink-custom-footer {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(255,255,255,0.9);
+    color: #333;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-family: ${fontFamily};
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 9998;
+  }
+  .pagelink-custom-footer a {
+    color: ${primary};
+    text-decoration: none;
+  }
+  .pagelink-custom-footer a:hover {
+    text-decoration: underline;
+  }
+  @media print {
+    .pagelink-custom-footer { display: none; }
+  }
+</style>
+<div class="pagelink-custom-footer">
+  ${branding.footerLink
+    ? `<a href="${branding.footerLink}" target="_blank" rel="noopener noreferrer">${branding.footerText}</a>`
+    : branding.footerText
+  }
+</div>
+`
 }
 
 function getPagelinkBadge(): string {
