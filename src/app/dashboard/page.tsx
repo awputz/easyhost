@@ -7,19 +7,44 @@ import { Upload, FolderPlus, Link2, LayoutGrid, List, Search } from 'lucide-reac
 import { Input } from '@/components/ui/input'
 import { UploadModal } from '@/components/upload/upload-modal'
 import { AssetGrid } from '@/components/assets/asset-grid'
+import { AssetList } from '@/components/assets/asset-list'
+import { AssetPreview } from '@/components/assets/asset-preview'
+import { BulkActionsBar } from '@/components/assets/bulk-actions-bar'
+import { FolderBreadcrumb } from '@/components/folders/folder-breadcrumb'
+import { CreateFolderModal } from '@/components/folders/create-folder-modal'
 import { Skeleton } from '@/components/ui/skeleton'
+import { toast } from 'sonner'
 import type { Asset } from '@/types'
+
+interface Folder {
+  id: string
+  name: string
+  path: string
+  parent_id: string | null
+}
 
 export default function DashboardPage() {
   const [assets, setAssets] = useState<Asset[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
   const [loading, setLoading] = useState(true)
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [createFolderOpen, setCreateFolderOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [previewAsset, setPreviewAsset] = useState<Asset | null>(null)
 
   const fetchAssets = useCallback(async () => {
     try {
-      const response = await fetch('/api/assets')
+      const params = new URLSearchParams()
+      if (currentFolderId) {
+        params.set('folder_id', currentFolderId)
+      }
+      if (searchQuery) {
+        params.set('search', searchQuery)
+      }
+      const response = await fetch(`/api/assets?${params}`)
       if (response.ok) {
         const data = await response.json()
         setAssets(data.assets || [])
@@ -29,14 +54,91 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
+  }, [currentFolderId, searchQuery])
+
+  const fetchFolders = useCallback(async () => {
+    try {
+      const response = await fetch('/api/folders')
+      if (response.ok) {
+        const data = await response.json()
+        setFolders(data.folders || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch folders:', error)
+    }
   }, [])
 
   useEffect(() => {
     fetchAssets()
   }, [fetchAssets])
 
-  const handleUploadComplete = (assetIds: string[]) => {
-    // Refresh assets list
+  useEffect(() => {
+    fetchFolders()
+  }, [fetchFolders])
+
+  const handleUploadComplete = () => {
+    fetchAssets()
+  }
+
+  const handleFolderCreated = () => {
+    fetchFolders()
+  }
+
+  // Build breadcrumb path
+  const buildBreadcrumbs = () => {
+    if (!currentFolderId) return []
+
+    const breadcrumbs: { id: string | null; name: string }[] = []
+    let folder = folders.find((f) => f.id === currentFolderId)
+
+    while (folder) {
+      breadcrumbs.unshift({ id: folder.id, name: folder.name })
+      folder = folder.parent_id ? folders.find((f) => f.id === folder!.parent_id) : undefined
+    }
+
+    return breadcrumbs
+  }
+
+  const handleSelectAsset = (id: string, selected: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (selected) {
+        next.add(id)
+      } else {
+        next.delete(id)
+      }
+      return next
+    })
+  }
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedIds(new Set(assets.map((a) => a.id)))
+    } else {
+      setSelectedIds(new Set())
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    toast.info(`Deleting ${selectedIds.size} assets...`)
+    setSelectedIds(new Set())
+    fetchAssets()
+  }
+
+  const handleBulkMove = () => {
+    toast.info('Move functionality coming soon')
+  }
+
+  const handleBulkTag = () => {
+    toast.info('Tag functionality coming soon')
+  }
+
+  const handleBulkDownload = () => {
+    toast.info('Download functionality coming soon')
+  }
+
+  const handleDeleteAsset = async (asset: Asset) => {
+    toast.success(`Deleted ${asset.filename}`)
     fetchAssets()
   }
 
@@ -46,6 +148,7 @@ export default function DashboardPage() {
   )
 
   const hasAssets = filteredAssets.length > 0
+  const breadcrumbs = buildBreadcrumbs()
 
   return (
     <div className="space-y-6">
@@ -53,12 +156,13 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Assets</h1>
-          <p className="text-muted-foreground">
-            Upload and manage your files
-          </p>
+          <FolderBreadcrumb
+            items={breadcrumbs}
+            onNavigate={setCurrentFolderId}
+          />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setCreateFolderOpen(true)}>
             <FolderPlus className="h-4 w-4 mr-2" />
             New folder
           </Button>
@@ -118,7 +222,18 @@ export default function DashboardPage() {
           ))}
         </div>
       ) : hasAssets ? (
-        <AssetGrid assets={filteredAssets} onAssetsChange={fetchAssets} />
+        viewMode === 'grid' ? (
+          <AssetGrid assets={filteredAssets} onAssetsChange={fetchAssets} />
+        ) : (
+          <AssetList
+            assets={filteredAssets}
+            selectedIds={selectedIds}
+            onSelect={handleSelectAsset}
+            onSelectAll={handleSelectAll}
+            onPreview={setPreviewAsset}
+            onDelete={handleDeleteAsset}
+          />
+        )
       ) : searchQuery ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
@@ -156,11 +271,36 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* Upload modal */}
+      {/* Bulk actions bar */}
+      <BulkActionsBar
+        selectedCount={selectedIds.size}
+        onClearSelection={() => setSelectedIds(new Set())}
+        onDelete={handleBulkDelete}
+        onMove={handleBulkMove}
+        onTag={handleBulkTag}
+        onDownload={handleBulkDownload}
+      />
+
+      {/* Modals */}
       <UploadModal
         open={uploadOpen}
         onOpenChange={setUploadOpen}
         onUploadComplete={handleUploadComplete}
+      />
+
+      <CreateFolderModal
+        open={createFolderOpen}
+        onOpenChange={setCreateFolderOpen}
+        parentId={currentFolderId}
+        onFolderCreated={handleFolderCreated}
+      />
+
+      <AssetPreview
+        asset={previewAsset}
+        open={!!previewAsset}
+        onOpenChange={(open) => !open && setPreviewAsset(null)}
+        assets={filteredAssets}
+        onNavigate={setPreviewAsset}
       />
     </div>
   )
