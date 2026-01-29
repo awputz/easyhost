@@ -13,7 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Search, Bell, Menu, Upload, LogOut, User, Settings } from 'lucide-react'
+import { Search, Menu, Upload, LogOut, User, Settings, HelpCircle } from 'lucide-react'
+import { NotificationsDropdown } from '@/components/layout/notifications-dropdown'
 import type { Profile } from '@/types'
 
 interface HeaderProps {
@@ -80,11 +81,7 @@ export function Header({ profile, onMenuClick }: HeaderProps) {
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {/* Notification dot */}
-          {/* <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" /> */}
-        </Button>
+        <NotificationsDropdown />
 
         {/* User menu */}
         <DropdownMenu>
@@ -117,6 +114,10 @@ export function Header({ profile, onMenuClick }: HeaderProps) {
             <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
               <Settings className="mr-2 h-4 w-4" />
               Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/dashboard/help')}>
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Help
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-destructive">

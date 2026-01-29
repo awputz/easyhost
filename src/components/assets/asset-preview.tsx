@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { X, Copy, Download, ExternalLink, Tag, Calendar, HardDrive, FileImage, FileVideo, FileText, FileCode, File, ChevronLeft, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
+import { X, Copy, Download, ExternalLink, Tag, Calendar, HardDrive, FileImage, FileVideo, FileText, FileCode, File, ChevronLeft, ChevronRight, History, BarChart3 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -245,11 +246,129 @@ export function AssetPreview({
                   <p className="text-xs text-muted-foreground">Downloads</p>
                 </div>
               </div>
+
+              <Separator />
+
+              {/* Version History */}
+              <VersionHistory assetId={asset.id} />
+
+              {/* Analytics link */}
+              <Link href={`/dashboard/analytics/asset/${asset.id}`}>
+                <Button variant="outline" className="w-full">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  View detailed analytics
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+interface Version {
+  id: string
+  version_number: number
+  size_bytes: number
+  note: string | null
+  created_at: string
+}
+
+function VersionHistory({ assetId }: { assetId: string }) {
+  const [versions, setVersions] = useState<Version[]>([])
+  const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState(false)
+
+  useEffect(() => {
+    fetchVersions()
+  }, [assetId])
+
+  const fetchVersions = async () => {
+    try {
+      const response = await fetch(`/api/assets/${assetId}/versions`)
+      if (response.ok) {
+        const data = await response.json()
+        setVersions(data.versions || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch versions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <History className="h-4 w-4" />
+          Version History
+        </div>
+        <p className="text-xs text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  if (versions.length === 0) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <History className="h-4 w-4" />
+          Version History
+        </div>
+        <p className="text-xs text-muted-foreground">No previous versions</p>
+      </div>
+    )
+  }
+
+  const displayVersions = expanded ? versions : versions.slice(0, 3)
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <History className="h-4 w-4" />
+          Version History
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {versions.length} version{versions.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+      <div className="space-y-2">
+        {displayVersions.map((version) => (
+          <div
+            key={version.id}
+            className="flex items-center justify-between text-xs p-2 rounded bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+          >
+            <div>
+              <span className="font-medium">v{version.version_number}</span>
+              <span className="text-muted-foreground ml-2">
+                {formatBytes(version.size_bytes)}
+              </span>
+              {version.note && (
+                <p className="text-muted-foreground truncate max-w-[150px]">
+                  {version.note}
+                </p>
+              )}
+            </div>
+            <span className="text-muted-foreground">
+              {formatDate(version.created_at)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {versions.length > 3 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full h-auto py-1 text-xs"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? 'Show less' : `Show ${versions.length - 3} more`}
+        </Button>
+      )}
+    </div>
   )
 }
 
