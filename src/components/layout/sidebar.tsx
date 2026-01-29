@@ -14,6 +14,8 @@ import {
   HelpCircle,
   ChevronLeft,
   FileText,
+  Sparkles,
+  Plus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -25,8 +27,8 @@ interface SidebarProps {
 }
 
 const navigation = [
+  { name: 'Documents', href: '/dashboard/pages', icon: FileText },
   { name: 'Assets', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Pages', href: '/dashboard/pages', icon: FileText },
   { name: 'Folders', href: '/dashboard/folders', icon: FolderOpen },
   { name: 'Links', href: '/dashboard/links', icon: Link2 },
   { name: 'Collections', href: '/dashboard/collections', icon: FolderKanban },
@@ -52,12 +54,12 @@ export function Sidebar({ collapsed = false, onCollapse }: SidebarProps) {
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-primary-foreground font-bold text-sm">EZ</span>
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Sparkles className="h-4 w-4 text-white" />
           </div>
           {!collapsed && (
             <span className="font-semibold text-lg text-sidebar-foreground">
-              EZ-Host.ai
+              Pagelink
             </span>
           )}
         </Link>
@@ -73,8 +75,21 @@ export function Sidebar({ collapsed = false, onCollapse }: SidebarProps) {
         )}
       </div>
 
+      {/* Create Button */}
+      {!collapsed && (
+        <div className="p-3">
+          <Link
+            href="/create"
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-blue-500 to-violet-600 hover:from-blue-600 hover:to-violet-700 text-white rounded-lg text-sm font-medium transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            New Document
+          </Link>
+        </div>
+      )}
+
       {/* Navigation */}
-      <ScrollArea className="flex-1 py-4">
+      <ScrollArea className="flex-1 py-2">
         <nav className="space-y-1 px-2">
           {navigation.map((item) => {
             const isActive = pathname === item.href ||
@@ -126,17 +141,17 @@ export function Sidebar({ collapsed = false, onCollapse }: SidebarProps) {
         <div className="p-4 border-t border-sidebar-border">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-sidebar-foreground/70">Storage</span>
-              <span className="text-sidebar-foreground">0 / 1 GB</span>
+              <span className="text-sidebar-foreground/70">Documents</span>
+              <span className="text-sidebar-foreground">0 / 3</span>
             </div>
             <div className="h-1.5 bg-sidebar-accent rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary rounded-full transition-all"
+                className="h-full bg-gradient-to-r from-blue-500 to-violet-600 rounded-full transition-all"
                 style={{ width: '0%' }}
               />
             </div>
             <p className="text-xs text-sidebar-foreground/50">
-              Free plan
+              Free plan • <Link href="/pricing" className="text-blue-400 hover:underline">Upgrade</Link>
             </p>
           </div>
         </div>
