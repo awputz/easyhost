@@ -19,6 +19,7 @@ import {
   Share2,
   History,
   Save,
+  BarChart3,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocumentSettings } from '@/components/pagelink/document-settings'
@@ -388,6 +389,16 @@ export default function DocumentEditPage({
               )}
             </button>
           </div>
+
+          <Link href={`/d/${document.slug}/analytics`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Analytics"
+            >
+              <BarChart3 className="w-5 h-5 text-zinc-400" />
+            </Button>
+          </Link>
 
           <Button
             variant="ghost"
