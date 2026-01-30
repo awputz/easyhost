@@ -170,25 +170,25 @@ export default function WebhookLogsPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-cream-50">
       {/* Header */}
-      <header className="border-b border-white/5 bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-navy-100 bg-cream-50/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link
                 href={`/d/${slug}`}
-                className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+                className="p-2 hover:bg-navy-100 rounded-lg transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 text-zinc-400" />
+                <ArrowLeft className="w-5 h-5 text-navy-500" />
               </Link>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-orange-500/10 rounded-lg">
                   <Webhook className="w-5 h-5 text-orange-400" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-semibold text-white">Webhook Logs</h1>
-                  <p className="text-sm text-zinc-500">View delivery history and troubleshoot issues</p>
+                  <h1 className="text-lg font-semibold text-navy-900">Webhook Logs</h1>
+                  <p className="text-sm text-navy-400">View delivery history and troubleshoot issues</p>
                 </div>
               </div>
             </div>
@@ -199,7 +199,7 @@ export default function WebhookLogsPage({
                 size="sm"
                 onClick={fetchLogs}
                 disabled={loading}
-                className="border-zinc-700"
+                className="border-navy-200"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
@@ -209,7 +209,7 @@ export default function WebhookLogsPage({
                 size="sm"
                 onClick={clearLogs}
                 disabled={isClearing || logs.length === 0}
-                className="border-zinc-700 text-red-400 hover:text-red-300"
+                className="border-navy-200 text-red-400 hover:text-red-300"
               >
                 {isClearing ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -227,21 +227,21 @@ export default function WebhookLogsPage({
         {/* Stats */}
         {stats && (
           <div className="grid grid-cols-4 gap-4 mb-6">
-            <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
-              <div className="text-2xl font-bold text-white">{stats.total}</div>
-              <div className="text-sm text-zinc-500">Total Deliveries</div>
+            <div className="bg-white rounded-xl p-4 border border-navy-100">
+              <div className="text-2xl font-bold text-navy-900">{stats.total}</div>
+              <div className="text-sm text-navy-400">Total Deliveries</div>
             </div>
-            <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+            <div className="bg-white rounded-xl p-4 border border-navy-100">
               <div className="text-2xl font-bold text-green-400">{stats.successful}</div>
-              <div className="text-sm text-zinc-500">Successful</div>
+              <div className="text-sm text-navy-400">Successful</div>
             </div>
-            <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+            <div className="bg-white rounded-xl p-4 border border-navy-100">
               <div className="text-2xl font-bold text-red-400">{stats.failed}</div>
-              <div className="text-sm text-zinc-500">Failed</div>
+              <div className="text-sm text-navy-400">Failed</div>
             </div>
-            <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+            <div className="bg-white rounded-xl p-4 border border-navy-100">
               <div className="text-2xl font-bold text-orange-400">{stats.successRate}%</div>
-              <div className="text-sm text-zinc-500">Success Rate</div>
+              <div className="text-sm text-navy-400">Success Rate</div>
             </div>
           </div>
         )}
@@ -249,8 +249,8 @@ export default function WebhookLogsPage({
         {/* Filters */}
         <div className="flex items-center gap-4 mb-6">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-zinc-500" />
-            <span className="text-sm text-zinc-400">Filter:</span>
+            <Filter className="w-4 h-4 text-navy-400" />
+            <span className="text-sm text-navy-500">Filter:</span>
           </div>
 
           <div className="flex gap-2">
@@ -261,7 +261,7 @@ export default function WebhookLogsPage({
                 className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                   filter === f
                     ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                    : 'bg-zinc-800 text-zinc-400 border border-zinc-700 hover:border-zinc-600'
+                    : 'bg-navy-100 text-navy-500 border border-navy-200 hover:border-zinc-600'
                 }`}
               >
                 {f === 'all' ? 'All' : f === 'success' ? 'Successful' : 'Failed'}
@@ -273,7 +273,7 @@ export default function WebhookLogsPage({
             <select
               value={endpointFilter}
               onChange={(e) => setEndpointFilter(e.target.value)}
-              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+              className="bg-navy-100 border border-navy-200 rounded-lg px-3 py-1.5 text-sm text-navy-900 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
             >
               <option value="">All Endpoints</option>
               {endpoints.map((endpoint) => (
@@ -291,31 +291,31 @@ export default function WebhookLogsPage({
             <Loader2 className="w-8 h-8 text-orange-400 animate-spin" />
           </div>
         ) : logs.length === 0 ? (
-          <div className="text-center py-12 bg-zinc-900 rounded-xl border border-zinc-800">
-            <Webhook className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-            <p className="text-zinc-400">No webhook deliveries yet</p>
-            <p className="text-sm text-zinc-600 mt-1">
+          <div className="text-center py-12 bg-white rounded-xl border border-navy-100">
+            <Webhook className="w-12 h-12 text-navy-300 mx-auto mb-3" />
+            <p className="text-navy-500">No webhook deliveries yet</p>
+            <p className="text-sm text-navy-500 mt-1">
               Webhook events will appear here when triggered
             </p>
           </div>
         ) : (
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+          <div className="bg-white rounded-xl border border-navy-100 overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-4 py-3">
+                <tr className="border-b border-navy-100">
+                  <th className="text-left text-xs font-medium text-navy-400 uppercase tracking-wider px-4 py-3">
                     Status
                   </th>
-                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-4 py-3">
+                  <th className="text-left text-xs font-medium text-navy-400 uppercase tracking-wider px-4 py-3">
                     Event
                   </th>
-                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-4 py-3">
+                  <th className="text-left text-xs font-medium text-navy-400 uppercase tracking-wider px-4 py-3">
                     Endpoint
                   </th>
-                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-4 py-3">
+                  <th className="text-left text-xs font-medium text-navy-400 uppercase tracking-wider px-4 py-3">
                     Response
                   </th>
-                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-4 py-3">
+                  <th className="text-left text-xs font-medium text-navy-400 uppercase tracking-wider px-4 py-3">
                     Time
                   </th>
                 </tr>
@@ -324,8 +324,8 @@ export default function WebhookLogsPage({
                 {logs.map((log, index) => (
                   <tr
                     key={log.id}
-                    className={`border-b border-zinc-800/50 ${
-                      index % 2 === 0 ? 'bg-zinc-900' : 'bg-zinc-900/50'
+                    className={`border-b border-navy-100/50 ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-white/50'
                     }`}
                   >
                     <td className="px-4 py-3">
@@ -342,12 +342,12 @@ export default function WebhookLogsPage({
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-white font-medium">
+                      <span className="text-sm text-navy-900 font-medium">
                         {formatEventType(log.event_type)}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-zinc-400">
+                      <span className="text-sm text-navy-500">
                         {getEndpointName(log.endpoint_id)}
                       </span>
                     </td>
@@ -363,13 +363,13 @@ export default function WebhookLogsPage({
                           {log.status_code}
                         </span>
                       ) : (
-                        <span className="text-sm text-zinc-500">
+                        <span className="text-sm text-navy-400">
                           {log.error_message || 'No response'}
                         </span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-zinc-500">
+                      <span className="text-sm text-navy-400">
                         {formatDate(log.created_at)}
                       </span>
                     </td>
@@ -381,9 +381,9 @@ export default function WebhookLogsPage({
         )}
 
         {/* Help Section */}
-        <div className="mt-8 bg-zinc-900/50 rounded-xl p-6 border border-zinc-800">
-          <h3 className="text-sm font-medium text-white mb-3">Troubleshooting Tips</h3>
-          <ul className="space-y-2 text-sm text-zinc-400">
+        <div className="mt-8 bg-white/50 rounded-xl p-6 border border-navy-100">
+          <h3 className="text-sm font-medium text-navy-900 mb-3">Troubleshooting Tips</h3>
+          <ul className="space-y-2 text-sm text-navy-500">
             <li className="flex items-start gap-2">
               <span className="text-orange-400">•</span>
               <span>Ensure your webhook endpoint returns a 2xx status code within 10 seconds</span>

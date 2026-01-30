@@ -185,41 +185,41 @@ export default function FeedbackPage({
   const pendingCount = feedback.filter(f => f.status === 'pending').length
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-cream-50">
       {/* Header */}
-      <header className="border-b border-white/5 px-6 py-4">
+      <header className="border-b border-navy-100 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href={`/d/${slug}`}
-              className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-navy-100 rounded-lg transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-zinc-400" />
+              <ArrowLeft className="w-5 h-5 text-navy-500" />
             </Link>
             <div>
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-amber-400" />
-                <h1 className="text-xl font-semibold text-white">Feedback</h1>
+                <h1 className="text-xl font-semibold text-navy-900">Feedback</h1>
                 {pendingCount > 0 && (
                   <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs font-medium rounded-full">
                     {pendingCount} pending
                   </span>
                 )}
               </div>
-              <p className="text-sm text-zinc-500">{documentTitle}</p>
+              <p className="text-sm text-navy-400">{documentTitle}</p>
             </div>
           </div>
 
           {/* Filter */}
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-zinc-500" />
+            <Filter className="w-4 h-4 text-navy-400" />
             <select
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value as StatusFilter)
                 setPagination(prev => ({ ...prev, page: 1 }))
               }}
-              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+              className="bg-navy-100 border border-navy-200 rounded-lg px-3 py-2 text-sm text-navy-900 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
             >
               <option value="all">All Feedback</option>
               <option value="pending">Pending Review</option>
@@ -233,29 +233,29 @@ export default function FeedbackPage({
       <main className="max-w-6xl mx-auto px-6 py-8">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
-            <div className="text-3xl font-bold text-white">{pagination.total}</div>
-            <div className="text-sm text-zinc-500">Total Feedback</div>
+          <div className="bg-white rounded-xl border border-navy-100 p-6">
+            <div className="text-3xl font-bold text-navy-900">{pagination.total}</div>
+            <div className="text-sm text-navy-400">Total Feedback</div>
           </div>
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
+          <div className="bg-white rounded-xl border border-navy-100 p-6">
             <div className="text-3xl font-bold text-amber-400">
               {feedback.filter(f => f.status === 'pending').length}
             </div>
-            <div className="text-sm text-zinc-500">Pending</div>
+            <div className="text-sm text-navy-400">Pending</div>
           </div>
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
+          <div className="bg-white rounded-xl border border-navy-100 p-6">
             <div className="text-3xl font-bold text-green-400">
               {feedback.filter(f => f.status === 'approved').length}
             </div>
-            <div className="text-sm text-zinc-500">Approved</div>
+            <div className="text-sm text-navy-400">Approved</div>
           </div>
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
-            <div className="text-3xl font-bold text-white">
+          <div className="bg-white rounded-xl border border-navy-100 p-6">
+            <div className="text-3xl font-bold text-navy-900">
               {feedback.filter(f => f.rating).length > 0
                 ? (feedback.reduce((sum, f) => sum + (f.rating || 0), 0) / feedback.filter(f => f.rating).length).toFixed(1)
                 : '—'}
             </div>
-            <div className="text-sm text-zinc-500">Avg Rating</div>
+            <div className="text-sm text-navy-400">Avg Rating</div>
           </div>
         </div>
 
@@ -266,11 +266,11 @@ export default function FeedbackPage({
           </div>
         ) : feedback.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageSquare className="w-8 h-8 text-zinc-600" />
+            <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageSquare className="w-8 h-8 text-navy-500" />
             </div>
-            <h3 className="text-lg font-medium text-white mb-2">No feedback yet</h3>
-            <p className="text-zinc-500">
+            <h3 className="text-lg font-medium text-navy-900 mb-2">No feedback yet</h3>
+            <p className="text-navy-400">
               {statusFilter !== 'all'
                 ? 'No feedback matches this filter.'
                 : 'Enable feedback collection to start receiving comments.'}
@@ -281,7 +281,7 @@ export default function FeedbackPage({
             {feedback.map((item) => (
               <div
                 key={item.id}
-                className="bg-zinc-900 rounded-xl border border-zinc-800 p-6"
+                className="bg-white rounded-xl border border-navy-100 p-6"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -298,7 +298,7 @@ export default function FeedbackPage({
                               className={`w-4 h-4 ${
                                 star <= item.rating!
                                   ? 'fill-amber-400 text-amber-400'
-                                  : 'text-zinc-600'
+                                  : 'text-navy-500'
                               }`}
                             />
                           ))}
@@ -311,11 +311,11 @@ export default function FeedbackPage({
 
                     {/* Content */}
                     {item.content && (
-                      <p className="text-white mb-3">{item.content}</p>
+                      <p className="text-navy-900 mb-3">{item.content}</p>
                     )}
 
                     {/* Meta */}
-                    <div className="flex items-center gap-4 text-sm text-zinc-500">
+                    <div className="flex items-center gap-4 text-sm text-navy-400">
                       {item.email && (
                         <div className="flex items-center gap-1">
                           <Mail className="w-3 h-3" />
@@ -342,7 +342,7 @@ export default function FeedbackPage({
                         <button
                           onClick={() => updateStatus(item.id, 'approved')}
                           disabled={updatingId === item.id}
-                          className="p-2 hover:bg-green-500/10 text-zinc-400 hover:text-green-400 rounded-lg transition-colors"
+                          className="p-2 hover:bg-green-500/10 text-navy-500 hover:text-green-400 rounded-lg transition-colors"
                           title="Approve"
                         >
                           {updatingId === item.id ? (
@@ -354,7 +354,7 @@ export default function FeedbackPage({
                         <button
                           onClick={() => updateStatus(item.id, 'rejected')}
                           disabled={updatingId === item.id}
-                          className="p-2 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 rounded-lg transition-colors"
+                          className="p-2 hover:bg-red-500/10 text-navy-500 hover:text-red-400 rounded-lg transition-colors"
                           title="Reject"
                         >
                           <X className="w-4 h-4" />
@@ -364,7 +364,7 @@ export default function FeedbackPage({
                     <button
                       onClick={() => deleteFeedback(item.id)}
                       disabled={deletingId === item.id}
-                      className="p-2 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 rounded-lg transition-colors"
+                      className="p-2 hover:bg-red-500/10 text-navy-500 hover:text-red-400 rounded-lg transition-colors"
                       title="Delete"
                     >
                       {deletingId === item.id ? (
@@ -381,7 +381,7 @@ export default function FeedbackPage({
             {/* Pagination */}
             {pagination.totalPages > 1 && (
               <div className="flex items-center justify-between mt-6">
-                <div className="text-sm text-zinc-500">
+                <div className="text-sm text-navy-400">
                   Showing {(pagination.page - 1) * pagination.pageSize + 1} to{' '}
                   {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
                   {pagination.total} items
@@ -392,11 +392,11 @@ export default function FeedbackPage({
                     size="sm"
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                     disabled={pagination.page === 1}
-                    className="border-zinc-700"
+                    className="border-navy-200"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <span className="text-sm text-zinc-400">
+                  <span className="text-sm text-navy-500">
                     Page {pagination.page} of {pagination.totalPages}
                   </span>
                   <Button
@@ -404,7 +404,7 @@ export default function FeedbackPage({
                     size="sm"
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                     disabled={pagination.page === pagination.totalPages}
-                    className="border-zinc-700"
+                    className="border-navy-200"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>

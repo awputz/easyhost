@@ -155,21 +155,21 @@ export default function ABTestPage({
     : null
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-cream-50">
       {/* Header */}
-      <header className="border-b border-white/5 px-6 py-4">
+      <header className="border-b border-navy-100 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href={`/d/${slug}`}
-              className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-navy-100 rounded-lg transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-zinc-400" />
+              <ArrowLeft className="w-5 h-5 text-navy-500" />
             </Link>
             <div>
               <div className="flex items-center gap-2">
                 <FlaskConical className="w-5 h-5 text-cyan-400" />
-                <h1 className="text-xl font-semibold text-white">A/B Test Results</h1>
+                <h1 className="text-xl font-semibold text-navy-900">A/B Test Results</h1>
                 {config?.enabled && (
                   <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 text-xs font-medium rounded-full flex items-center gap-1">
                     <Play className="w-3 h-3" />
@@ -183,7 +183,7 @@ export default function ABTestPage({
                   </span>
                 )}
               </div>
-              <p className="text-sm text-zinc-500">{documentTitle}</p>
+              <p className="text-sm text-navy-400">{documentTitle}</p>
             </div>
           </div>
         </div>
@@ -196,11 +196,11 @@ export default function ABTestPage({
           </div>
         ) : !config || !config.variants || config.variants.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FlaskConical className="w-8 h-8 text-zinc-600" />
+            <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FlaskConical className="w-8 h-8 text-navy-500" />
             </div>
-            <h3 className="text-lg font-medium text-white mb-2">No A/B test configured</h3>
-            <p className="text-zinc-500 mb-6">
+            <h3 className="text-lg font-medium text-navy-900 mb-2">No A/B test configured</h3>
+            <p className="text-navy-400 mb-6">
               Set up an A/B test to compare different versions of your document.
             </p>
             <Link href={`/d/${slug}`}>
@@ -213,35 +213,35 @@ export default function ABTestPage({
           <>
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
-                <div className="text-3xl font-bold text-white">{totalViews.toLocaleString()}</div>
-                <div className="text-sm text-zinc-500">Total Views</div>
+              <div className="bg-white rounded-xl border border-navy-100 p-6">
+                <div className="text-3xl font-bold text-navy-900">{totalViews.toLocaleString()}</div>
+                <div className="text-sm text-navy-400">Total Views</div>
               </div>
-              <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
-                <div className="text-3xl font-bold text-white">{totalConversions.toLocaleString()}</div>
-                <div className="text-sm text-zinc-500">Conversions</div>
+              <div className="bg-white rounded-xl border border-navy-100 p-6">
+                <div className="text-3xl font-bold text-navy-900">{totalConversions.toLocaleString()}</div>
+                <div className="text-sm text-navy-400">Conversions</div>
               </div>
-              <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
+              <div className="bg-white rounded-xl border border-navy-100 p-6">
                 <div className="text-3xl font-bold text-cyan-400">
                   {totalViews > 0 ? ((totalConversions / totalViews) * 100).toFixed(1) : '0'}%
                 </div>
-                <div className="text-sm text-zinc-500">Avg Conversion Rate</div>
+                <div className="text-sm text-navy-400">Avg Conversion Rate</div>
               </div>
-              <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
+              <div className="bg-white rounded-xl border border-navy-100 p-6">
                 <div className={`text-3xl font-bold ${
                   confidence >= config.confidenceLevel ? 'text-green-400' : 'text-amber-400'
                 }`}>
                   {confidence.toFixed(0)}%
                 </div>
-                <div className="text-sm text-zinc-500">Confidence</div>
+                <div className="text-sm text-navy-400">Confidence</div>
               </div>
             </div>
 
             {/* Test Info */}
-            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 mb-8">
+            <div className="bg-white rounded-xl border border-navy-100 p-6 mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white">{config.testName}</h2>
-                <div className="flex items-center gap-4 text-sm text-zinc-500">
+                <h2 className="text-lg font-semibold text-navy-900">{config.testName}</h2>
+                <div className="flex items-center gap-4 text-sm text-navy-400">
                   <span>Started: {formatDate(config.startedAt)}</span>
                   {config.endedAt && <span>Ended: {formatDate(config.endedAt)}</span>}
                 </div>
@@ -251,14 +251,14 @@ export default function ABTestPage({
               {!config.winnerId && (
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-zinc-400">Statistical Confidence</span>
+                    <span className="text-sm text-navy-500">Statistical Confidence</span>
                     <span className={`text-sm font-medium ${
-                      confidence >= config.confidenceLevel ? 'text-green-400' : 'text-zinc-400'
+                      confidence >= config.confidenceLevel ? 'text-green-400' : 'text-navy-500'
                     }`}>
                       {confidence.toFixed(0)}% / {config.confidenceLevel}% needed
                     </span>
                   </div>
-                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-navy-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full transition-all duration-500 ${
                         confidence >= config.confidenceLevel ? 'bg-green-500' : 'bg-cyan-500'
@@ -281,8 +281,8 @@ export default function ABTestPage({
                   <div className="flex items-center gap-3">
                     <Trophy className="w-6 h-6 text-amber-400" />
                     <div>
-                      <div className="font-medium text-white">Winner: {leadingVariant.name}</div>
-                      <div className="text-sm text-zinc-400">
+                      <div className="font-medium text-navy-900">Winner: {leadingVariant.name}</div>
+                      <div className="text-sm text-navy-500">
                         This variant has been applied to your document.
                       </div>
                     </div>
@@ -293,7 +293,7 @@ export default function ABTestPage({
 
             {/* Variants */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-white">Variants</h3>
+              <h3 className="text-lg font-medium text-navy-900">Variants</h3>
 
               {config.variants.map((variant, index) => {
                 const isLeading = leadingVariant?.id === variant.id
@@ -302,12 +302,12 @@ export default function ABTestPage({
                 return (
                   <div
                     key={variant.id}
-                    className={`bg-zinc-900 rounded-xl border p-6 ${
+                    className={`bg-white rounded-xl border p-6 ${
                       isWinner
                         ? 'border-amber-500/50'
                         : isLeading
                         ? 'border-cyan-500/50'
-                        : 'border-zinc-800'
+                        : 'border-navy-100'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-4">
@@ -317,13 +317,13 @@ export default function ABTestPage({
                             ? 'bg-amber-500/20 text-amber-400'
                             : isLeading
                             ? 'bg-cyan-500/20 text-cyan-400'
-                            : 'bg-zinc-800 text-zinc-400'
+                            : 'bg-navy-100 text-navy-500'
                         }`}>
                           {String.fromCharCode(65 + index)}
                         </span>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-white">{variant.name}</span>
+                            <span className="font-medium text-navy-900">{variant.name}</span>
                             {isWinner && (
                               <Trophy className="w-4 h-4 text-amber-400" />
                             )}
@@ -331,7 +331,7 @@ export default function ABTestPage({
                               <TrendingUp className="w-4 h-4 text-cyan-400" />
                             )}
                           </div>
-                          <span className="text-xs text-zinc-500">
+                          <span className="text-xs text-navy-400">
                             {variant.trafficPercent}% traffic
                           </span>
                         </div>
@@ -343,7 +343,7 @@ export default function ABTestPage({
                           size="sm"
                           onClick={() => handleDeclareWinner(variant.id)}
                           disabled={declaringWinner === variant.id || totalViews < config.minSampleSize}
-                          className="border-zinc-700"
+                          className="border-navy-200"
                         >
                           {declaringWinner === variant.id ? (
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -357,31 +357,31 @@ export default function ABTestPage({
 
                     {/* Stats */}
                     <div className="grid grid-cols-3 gap-6">
-                      <div className="text-center p-4 bg-zinc-800/50 rounded-lg">
-                        <div className="text-2xl font-bold text-white">
+                      <div className="text-center p-4 bg-navy-100/50 rounded-lg">
+                        <div className="text-2xl font-bold text-navy-900">
                           {variant.views.toLocaleString()}
                         </div>
-                        <div className="text-sm text-zinc-500">Views</div>
+                        <div className="text-sm text-navy-400">Views</div>
                       </div>
-                      <div className="text-center p-4 bg-zinc-800/50 rounded-lg">
-                        <div className="text-2xl font-bold text-white">
+                      <div className="text-center p-4 bg-navy-100/50 rounded-lg">
+                        <div className="text-2xl font-bold text-navy-900">
                           {variant.conversions.toLocaleString()}
                         </div>
-                        <div className="text-sm text-zinc-500">Conversions</div>
+                        <div className="text-sm text-navy-400">Conversions</div>
                       </div>
-                      <div className="text-center p-4 bg-zinc-800/50 rounded-lg">
+                      <div className="text-center p-4 bg-navy-100/50 rounded-lg">
                         <div className={`text-2xl font-bold ${
-                          isLeading ? 'text-cyan-400' : 'text-white'
+                          isLeading ? 'text-cyan-400' : 'text-navy-900'
                         }`}>
                           {variant.conversionRate.toFixed(2)}%
                         </div>
-                        <div className="text-sm text-zinc-500">Conversion Rate</div>
+                        <div className="text-sm text-navy-400">Conversion Rate</div>
                       </div>
                     </div>
 
                     {/* Comparison to baseline */}
                     {index > 0 && config.variants[0].conversionRate > 0 && (
-                      <div className="mt-4 pt-4 border-t border-zinc-800">
+                      <div className="mt-4 pt-4 border-t border-navy-100">
                         <div className="flex items-center gap-2">
                           {variant.conversionRate > config.variants[0].conversionRate ? (
                             <>
@@ -389,7 +389,7 @@ export default function ABTestPage({
                               <span className="text-green-400 text-sm font-medium">
                                 +{((variant.conversionRate / config.variants[0].conversionRate - 1) * 100).toFixed(1)}%
                               </span>
-                              <span className="text-zinc-500 text-sm">vs Control</span>
+                              <span className="text-navy-400 text-sm">vs Control</span>
                             </>
                           ) : (
                             <>
@@ -397,7 +397,7 @@ export default function ABTestPage({
                               <span className="text-red-400 text-sm font-medium">
                                 {((variant.conversionRate / config.variants[0].conversionRate - 1) * 100).toFixed(1)}%
                               </span>
-                              <span className="text-zinc-500 text-sm">vs Control</span>
+                              <span className="text-navy-400 text-sm">vs Control</span>
                             </>
                           )}
                         </div>
@@ -415,7 +415,7 @@ export default function ABTestPage({
                   <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0" />
                   <div>
                     <div className="font-medium text-amber-400">Collecting more data</div>
-                    <div className="text-sm text-zinc-400">
+                    <div className="text-sm text-navy-500">
                       {config.minSampleSize - totalViews} more views needed to reach minimum sample size of {config.minSampleSize}.
                     </div>
                   </div>

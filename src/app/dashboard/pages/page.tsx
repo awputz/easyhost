@@ -2,32 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import {
-  Plus,
-  Search,
-  LayoutGrid,
-  List,
-  ExternalLink,
-  Copy,
-  Check,
-  Eye,
-  Calendar,
-  FileText,
-  Presentation,
-  FileSpreadsheet,
-  Newspaper,
-  MoreHorizontal,
-  Trash2,
-  Edit,
-  Lock,
-  Globe,
-  Sparkles,
-  Shield,
-  Clock,
-  Archive,
-  ArchiveRestore,
-  Files,
-} from 'lucide-react'
 
 type ViewMode = 'grid' | 'list'
 
@@ -45,17 +19,6 @@ interface PagelinkDocument {
   created_at: string
   updated_at: string
   archived_at: string | null
-}
-
-const DOCUMENT_TYPE_ICONS: Record<string, typeof FileText> = {
-  'pitch_deck': Presentation,
-  'investment_memo': FileSpreadsheet,
-  'proposal': FileText,
-  'one_pager': FileText,
-  'case_study': FileText,
-  'report': FileSpreadsheet,
-  'newsletter': Newspaper,
-  'custom': FileText,
 }
 
 export default function PagesPage() {
@@ -102,7 +65,7 @@ export default function PagesPage() {
         method: 'DELETE',
       })
       if (response.ok) {
-        setDocuments(documents.filter(d => d.id !== id))
+        setDocuments(prev => prev.filter(d => d.id !== id))
       }
     } catch (error) {
       console.error('Error deleting document:', error)
@@ -115,7 +78,7 @@ export default function PagesPage() {
         method: 'POST',
       })
       if (response.ok) {
-        setDocuments(documents.filter(d => d.id !== id))
+        setDocuments(prev => prev.filter(d => d.id !== id))
       }
     } catch (error) {
       console.error('Error archiving document:', error)
@@ -128,7 +91,7 @@ export default function PagesPage() {
         method: 'DELETE',
       })
       if (response.ok) {
-        setDocuments(documents.filter(d => d.id !== id))
+        setDocuments(prev => prev.filter(d => d.id !== id))
       }
     } catch (error) {
       console.error('Error restoring document:', error)
@@ -152,49 +115,63 @@ export default function PagesPage() {
     doc.title.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+
+    if (days === 0) return 'Today'
+    if (days === 1) return 'Yesterday'
+    if (days < 7) return `${days} days ago`
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  const formatDocumentType = (type: string | null): string => {
+    if (!type) return 'Custom'
+    return type
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6">
-      {/* Header */}
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-cream-50">
+      <div className="max-w-5xl mx-auto py-10 px-6">
+        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-blue-500" />
-              Pages
-            </h1>
-            <p className="text-zinc-400 mt-1">Create and manage AI-generated documents</p>
+            <h1 className="font-serif text-2xl font-semibold text-navy-900">AI Pages</h1>
+            <p className="text-navy-500 text-sm mt-1">Create and manage AI-generated documents</p>
           </div>
           <Link
             href="/create"
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-navy-800 hover:bg-navy-700 text-cream-50 rounded-lg text-sm font-medium transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            Create Page
+            + Create Page
           </Link>
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-1 mb-6 border-b border-zinc-800">
+        <div className="flex items-center gap-1 mb-6 border-b border-navy-100">
           <button
             onClick={() => setShowArchived(false)}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
               !showArchived
-                ? 'text-white border-blue-500'
-                : 'text-zinc-500 border-transparent hover:text-zinc-300'
+                ? 'text-navy-900 border-navy-800'
+                : 'text-navy-400 border-transparent hover:text-navy-600'
             }`}
           >
-            <FileText className="w-4 h-4" />
             Active
           </button>
           <button
             onClick={() => setShowArchived(true)}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
               showArchived
-                ? 'text-white border-blue-500'
-                : 'text-zinc-500 border-transparent hover:text-zinc-300'
+                ? 'text-navy-900 border-navy-800'
+                : 'text-navy-400 border-transparent hover:text-navy-600'
             }`}
           >
-            <Archive className="w-4 h-4" />
             Archived
           </button>
         </div>
@@ -202,31 +179,30 @@ export default function PagesPage() {
         {/* Search and View Toggle */}
         <div className="flex items-center gap-4 mb-6">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search pages..."
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+              className="w-full bg-white border border-navy-100 rounded-lg pl-4 pr-4 py-2 text-sm text-navy-800 placeholder-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-200 focus:border-navy-200"
             />
           </div>
-          <div className="flex bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+          <div className="flex bg-white border border-navy-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded ${
-                viewMode === 'grid' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-white'
+              className={`px-3 py-1.5 rounded text-sm ${
+                viewMode === 'grid' ? 'bg-navy-100 text-navy-900' : 'text-navy-500 hover:text-navy-700'
               }`}
             >
-              <LayoutGrid className="w-4 h-4" />
+              Grid
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded ${
-                viewMode === 'list' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-white'
+              className={`px-3 py-1.5 rounded text-sm ${
+                viewMode === 'list' ? 'bg-navy-100 text-navy-900' : 'text-navy-500 hover:text-navy-700'
               }`}
             >
-              <List className="w-4 h-4" />
+              List
             </button>
           </div>
         </div>
@@ -235,26 +211,22 @@ export default function PagesPage() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-zinc-900 rounded-xl p-6 animate-pulse">
-                <div className="h-4 bg-zinc-800 rounded w-3/4 mb-4" />
-                <div className="h-3 bg-zinc-800 rounded w-1/2 mb-2" />
-                <div className="h-3 bg-zinc-800 rounded w-1/3" />
+              <div key={i} className="bg-white rounded-xl p-6 animate-pulse border border-navy-100">
+                <div className="h-4 bg-navy-100 rounded w-3/4 mb-4" />
+                <div className="h-3 bg-navy-50 rounded w-1/2 mb-2" />
+                <div className="h-3 bg-navy-50 rounded w-1/3" />
               </div>
             ))}
           </div>
         ) : filteredDocuments.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500/20 to-violet-600/20 rounded-xl flex items-center justify-center">
-              {showArchived ? (
-                <Archive className="w-8 h-8 text-zinc-400" />
-              ) : (
-                <Sparkles className="w-8 h-8 text-blue-400" />
-              )}
+            <div className="w-16 h-16 mx-auto mb-4 bg-navy-100 rounded-xl flex items-center justify-center">
+              <span className="text-2xl">{showArchived ? '📦' : '✨'}</span>
             </div>
-            <h3 className="text-lg font-medium mb-2">
+            <h3 className="font-serif text-lg font-medium text-navy-900 mb-2">
               {showArchived ? 'No archived pages' : 'No pages yet'}
             </h3>
-            <p className="text-zinc-500 mb-6">
+            <p className="text-navy-500 mb-6">
               {searchQuery
                 ? 'No pages match your search'
                 : showArchived
@@ -264,10 +236,9 @@ export default function PagesPage() {
             {!searchQuery && !showArchived && (
               <Link
                 href="/create"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-navy-800 hover:bg-navy-700 text-cream-50 rounded-lg text-sm font-medium transition-colors"
               >
-                <Plus className="w-4 h-4" />
-                Create Page
+                + Create Page
               </Link>
             )}
           </div>
@@ -284,27 +255,29 @@ export default function PagesPage() {
                 onDuplicate={() => handleDuplicate(doc.id)}
                 isCopied={copiedId === doc.id}
                 isArchived={showArchived}
+                formatDate={formatDate}
+                formatDocumentType={formatDocumentType}
               />
             ))}
           </div>
         ) : (
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+          <div className="bg-white rounded-xl border border-navy-100 overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase">
+                <tr className="border-b border-navy-100">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-navy-500 uppercase">
                     Title
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-navy-500 uppercase">
                     Type
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-navy-500 uppercase">
                     Status
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-navy-500 uppercase">
                     Views
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-navy-500 uppercase">
                     Updated
                   </th>
                   <th className="px-4 py-3" />
@@ -322,6 +295,8 @@ export default function PagesPage() {
                     onDuplicate={() => handleDuplicate(doc.id)}
                     isCopied={copiedId === doc.id}
                     isArchived={showArchived}
+                    formatDate={formatDate}
+                    formatDocumentType={formatDocumentType}
                   />
                 ))}
               </tbody>
@@ -342,6 +317,8 @@ function DocumentCard({
   onDuplicate,
   isCopied,
   isArchived,
+  formatDate,
+  formatDocumentType,
 }: {
   document: PagelinkDocument
   onCopyLink: () => void
@@ -351,27 +328,26 @@ function DocumentCard({
   onDuplicate: () => void
   isCopied: boolean
   isArchived: boolean
+  formatDate: (date: string) => string
+  formatDocumentType: (type: string | null) => string
 }) {
   const [showMenu, setShowMenu] = useState(false)
-  const Icon = DOCUMENT_TYPE_ICONS[document.document_type] || FileText
-
   const isExpired = document.expires_at && new Date(document.expires_at) < new Date()
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden hover:border-zinc-700 transition-colors group">
+    <div className="bg-white rounded-xl border border-navy-100 overflow-hidden hover:border-navy-200 hover:shadow-sm transition-all group">
       {/* Preview Area */}
       <Link href={`/d/${document.slug}`}>
-        <div className="aspect-[16/10] bg-zinc-950 relative overflow-hidden">
+        <div className="aspect-[16/10] bg-cream-100 relative overflow-hidden">
           <div className="absolute inset-0 p-4 scale-[0.3] origin-top-left w-[333%] h-[333%]">
             <div
               dangerouslySetInnerHTML={{ __html: document.html?.slice(0, 500) || '' }}
-              className="text-white pointer-events-none"
+              className="text-navy-900 pointer-events-none"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-white/80 to-transparent" />
           {isArchived && (
-            <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-zinc-800/90 rounded text-xs text-zinc-400">
-              <Archive className="w-3 h-3" />
+            <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-navy-100 rounded text-xs text-navy-600">
               Archived
             </div>
           )}
@@ -382,16 +358,16 @@ function DocumentCard({
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
           <Link href={`/d/${document.slug}`} className="flex-1 min-w-0">
-            <h3 className="font-medium text-white truncate hover:text-blue-400 transition-colors">
+            <h3 className="font-medium text-navy-900 truncate hover:text-navy-700 transition-colors">
               {document.title}
             </h3>
           </Link>
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-1 hover:bg-zinc-800 rounded transition-colors"
+              className="p-1 hover:bg-navy-50 rounded transition-colors text-navy-400"
             >
-              <MoreHorizontal className="w-4 h-4 text-zinc-500" />
+              •••
             </button>
             {showMenu && (
               <>
@@ -399,63 +375,56 @@ function DocumentCard({
                   className="fixed inset-0 z-10"
                   onClick={() => setShowMenu(false)}
                 />
-                <div className="absolute right-0 top-full mt-1 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 py-1 w-40 z-20">
+                <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-navy-100 py-1 w-40 z-20">
                   <Link
                     href={`/d/${document.slug}`}
-                    className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-700 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-navy-700 hover:bg-navy-50 transition-colors"
                   >
-                    <Edit className="w-4 h-4" />
                     Edit
                   </Link>
                   <button
                     onClick={() => { onCopyLink(); setShowMenu(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-700 transition-colors"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-navy-700 hover:bg-navy-50 transition-colors"
                   >
-                    <Copy className="w-4 h-4" />
                     Copy Link
                   </button>
                   <a
                     href={`/${document.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-700 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-navy-700 hover:bg-navy-50 transition-colors"
                   >
-                    <ExternalLink className="w-4 h-4" />
                     Open
                   </a>
                   {!isArchived && (
                     <button
                       onClick={() => { onDuplicate(); setShowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-700 transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-navy-700 hover:bg-navy-50 transition-colors"
                     >
-                      <Files className="w-4 h-4" />
                       Duplicate
                     </button>
                   )}
-                  <hr className="my-1 border-zinc-700" />
+                  <hr className="my-1 border-navy-100" />
                   {isArchived ? (
                     <>
                       <button
                         onClick={() => { onRestore(); setShowMenu(false); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-400 hover:bg-zinc-700 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-600 hover:bg-navy-50 transition-colors"
                       >
-                        <ArchiveRestore className="w-4 h-4" />
                         Restore
                       </button>
                       <button
                         onClick={() => { onDelete(); setShowMenu(false); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-zinc-700 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-navy-50 transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
                         Delete Forever
                       </button>
                     </>
                   ) : (
                     <button
                       onClick={() => { onArchive(); setShowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-400 hover:bg-zinc-700 transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-600 hover:bg-navy-50 transition-colors"
                     >
-                      <Archive className="w-4 h-4" />
                       Archive
                     </button>
                   )}
@@ -465,45 +434,16 @@ function DocumentCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 mt-3 text-xs text-zinc-500">
-          <span className="flex items-center gap-1">
-            <Icon className="w-3.5 h-3.5" />
-            {formatDocumentType(document.document_type)}
-          </span>
-          <span className="flex items-center gap-1">
-            {document.is_public ? (
-              <>
-                <Globe className="w-3.5 h-3.5" />
-                Public
-              </>
-            ) : (
-              <>
-                <Lock className="w-3.5 h-3.5" />
-                Private
-              </>
-            )}
-          </span>
-          {document.has_password && (
-            <span className="flex items-center gap-1 text-amber-500">
-              <Shield className="w-3.5 h-3.5" />
-              Protected
-            </span>
-          )}
-          {isExpired && (
-            <span className="flex items-center gap-1 text-red-400">
-              <Clock className="w-3.5 h-3.5" />
-              Expired
-            </span>
-          )}
-          <span className="flex items-center gap-1">
-            <Eye className="w-3.5 h-3.5" />
-            {document.view_count}
-          </span>
+        <div className="flex items-center gap-3 mt-3 text-xs text-navy-500">
+          <span>{formatDocumentType(document.document_type)}</span>
+          <span>{document.is_public ? 'Public' : 'Private'}</span>
+          {document.has_password && <span className="text-amber-600">Protected</span>}
+          {isExpired && <span className="text-red-600">Expired</span>}
+          <span>{document.view_count} views</span>
         </div>
 
         {isCopied && (
-          <div className="mt-2 flex items-center gap-1 text-xs text-green-400">
-            <Check className="w-3.5 h-3.5" />
+          <div className="mt-2 text-xs text-green-600">
             Link copied!
           </div>
         )}
@@ -521,6 +461,8 @@ function DocumentRow({
   onDuplicate,
   isCopied,
   isArchived,
+  formatDate,
+  formatDocumentType,
 }: {
   document: PagelinkDocument
   onCopyLink: () => void
@@ -530,103 +472,97 @@ function DocumentRow({
   onDuplicate: () => void
   isCopied: boolean
   isArchived: boolean
+  formatDate: (date: string) => string
+  formatDocumentType: (type: string | null) => string
 }) {
   const [showMenu, setShowMenu] = useState(false)
-  const Icon = DOCUMENT_TYPE_ICONS[document.document_type] || FileText
-
   const isExpired = document.expires_at && new Date(document.expires_at) < new Date()
 
   return (
-    <tr className="border-b border-zinc-800 last:border-0 hover:bg-zinc-800/50 transition-colors">
+    <tr className="border-b border-navy-100 last:border-0 hover:bg-cream-50 transition-colors">
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           <Link
             href={`/d/${document.slug}`}
-            className="font-medium hover:text-blue-400 transition-colors"
+            className="font-medium text-navy-900 hover:text-navy-700 transition-colors"
           >
             {document.title}
           </Link>
           {isArchived && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-zinc-700 text-zinc-400">
-              <Archive className="w-3 h-3" />
+            <span className="px-1.5 py-0.5 rounded text-xs bg-navy-100 text-navy-600">
+              Archived
             </span>
           )}
         </div>
       </td>
       <td className="px-4 py-3">
-        <span className="flex items-center gap-1.5 text-sm text-zinc-400">
-          <Icon className="w-4 h-4" />
+        <span className="text-sm text-navy-600">
           {formatDocumentType(document.document_type)}
         </span>
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
+            className={`px-2 py-0.5 rounded-full text-xs ${
               document.is_public
-                ? 'bg-green-500/10 text-green-400'
-                : 'bg-zinc-700 text-zinc-400'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-navy-100 text-navy-600'
             }`}
           >
-            {document.is_public ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
             {document.is_public ? 'Public' : 'Private'}
           </span>
           {document.has_password && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-amber-500/10 text-amber-400">
-              <Shield className="w-3 h-3" />
+            <span className="px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700">
+              Protected
             </span>
           )}
           {isExpired && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-red-500/10 text-red-400">
-              <Clock className="w-3 h-3" />
+            <span className="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700">
               Expired
             </span>
           )}
         </div>
       </td>
       <td className="px-4 py-3">
-        <span className="flex items-center gap-1 text-sm text-zinc-400">
-          <Eye className="w-4 h-4" />
+        <span className="text-sm text-navy-600">
           {document.view_count}
         </span>
       </td>
       <td className="px-4 py-3">
-        <span className="flex items-center gap-1 text-sm text-zinc-400">
-          <Calendar className="w-4 h-4" />
+        <span className="text-sm text-navy-500">
           {formatDate(document.updated_at)}
         </span>
       </td>
       <td className="px-4 py-3">
         <div className="relative flex items-center gap-1">
           {isCopied ? (
-            <span className="flex items-center gap-1 text-xs text-green-400">
-              <Check className="w-3.5 h-3.5" />
+            <span className="text-xs text-green-600">
               Copied
             </span>
           ) : (
             <>
               <button
                 onClick={onCopyLink}
-                className="p-1.5 hover:bg-zinc-700 rounded transition-colors"
+                className="p-1.5 hover:bg-navy-100 rounded transition-colors text-navy-500"
                 title="Copy link"
               >
-                <Copy className="w-4 h-4 text-zinc-500" />
+                ⎘
               </button>
               <a
                 href={`/${document.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1.5 hover:bg-zinc-700 rounded transition-colors"
+                className="p-1.5 hover:bg-navy-100 rounded transition-colors text-navy-500"
                 title="Open in new tab"
               >
-                <ExternalLink className="w-4 h-4 text-zinc-500" />
+                ↗
               </a>
               <div className="relative">
                 <button
                   onClick={() => setShowMenu(!showMenu)}
-                  className="p-1.5 hover:bg-zinc-700 rounded transition-colors"
+                  className="p-1.5 hover:bg-navy-100 rounded transition-colors text-navy-500"
                 >
-                  <MoreHorizontal className="w-4 h-4 text-zinc-500" />
+                  •••
                 </button>
                 {showMenu && (
                   <>
@@ -634,47 +570,42 @@ function DocumentRow({
                       className="fixed inset-0 z-10"
                       onClick={() => setShowMenu(false)}
                     />
-                    <div className="absolute right-0 top-full mt-1 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 py-1 w-40 z-20">
+                    <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-navy-100 py-1 w-40 z-20">
                       <Link
                         href={`/d/${document.slug}`}
-                        className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-700 transition-colors"
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-navy-700 hover:bg-navy-50 transition-colors"
                       >
-                        <Edit className="w-4 h-4" />
                         Edit
                       </Link>
                       {!isArchived && (
                         <button
                           onClick={() => { onDuplicate(); setShowMenu(false); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-700 transition-colors"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-navy-700 hover:bg-navy-50 transition-colors"
                         >
-                          <Files className="w-4 h-4" />
                           Duplicate
                         </button>
                       )}
-                      <hr className="my-1 border-zinc-700" />
+                      <hr className="my-1 border-navy-100" />
                       {isArchived ? (
                         <>
                           <button
                             onClick={() => { onRestore(); setShowMenu(false); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-400 hover:bg-zinc-700 transition-colors"
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-600 hover:bg-navy-50 transition-colors"
                           >
-                            <ArchiveRestore className="w-4 h-4" />
                             Restore
                           </button>
                           <button
                             onClick={() => { onDelete(); setShowMenu(false); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-zinc-700 transition-colors"
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-navy-50 transition-colors"
                           >
-                            <Trash2 className="w-4 h-4" />
                             Delete Forever
                           </button>
                         </>
                       ) : (
                         <button
                           onClick={() => { onArchive(); setShowMenu(false); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-400 hover:bg-zinc-700 transition-colors"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-600 hover:bg-navy-50 transition-colors"
                         >
-                          <Archive className="w-4 h-4" />
                           Archive
                         </button>
                       )}
@@ -688,24 +619,4 @@ function DocumentRow({
       </td>
     </tr>
   )
-}
-
-function formatDocumentType(type: string | null): string {
-  if (!type) return 'Custom'
-  return type
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
-}
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-
-  if (days === 0) return 'Today'
-  if (days === 1) return 'Yesterday'
-  if (days < 7) return `${days} days ago`
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }

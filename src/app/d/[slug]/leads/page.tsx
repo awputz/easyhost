@@ -173,23 +173,23 @@ export default function LeadsPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-cream-50">
       {/* Header */}
-      <header className="border-b border-white/5 px-6 py-4">
+      <header className="border-b border-navy-100 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href={`/d/${slug}`}
-              className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-navy-100 rounded-lg transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-zinc-400" />
+              <ArrowLeft className="w-5 h-5 text-navy-500" />
             </Link>
             <div>
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-green-400" />
-                <h1 className="text-xl font-semibold text-white">Leads</h1>
+                <h1 className="text-xl font-semibold text-navy-900">Leads</h1>
               </div>
-              <p className="text-sm text-zinc-500">{documentTitle}</p>
+              <p className="text-sm text-navy-400">{documentTitle}</p>
             </div>
           </div>
 
@@ -198,7 +198,7 @@ export default function LeadsPage({
               variant="outline"
               onClick={handleExport}
               disabled={isExporting || leads.length === 0}
-              className="border-zinc-700"
+              className="border-navy-200"
             >
               {isExporting ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -214,12 +214,12 @@ export default function LeadsPage({
       <main className="max-w-6xl mx-auto px-6 py-8">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
-            <div className="text-3xl font-bold text-white">{pagination.total}</div>
-            <div className="text-sm text-zinc-500">Total Leads</div>
+          <div className="bg-white rounded-xl border border-navy-100 p-6">
+            <div className="text-3xl font-bold text-navy-900">{pagination.total}</div>
+            <div className="text-sm text-navy-400">Total Leads</div>
           </div>
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
-            <div className="text-3xl font-bold text-white">
+          <div className="bg-white rounded-xl border border-navy-100 p-6">
+            <div className="text-3xl font-bold text-navy-900">
               {leads.filter(l => {
                 const date = new Date(l.created_at)
                 const now = new Date()
@@ -228,10 +228,10 @@ export default function LeadsPage({
                        date.getFullYear() === now.getFullYear()
               }).length}
             </div>
-            <div className="text-sm text-zinc-500">Today</div>
+            <div className="text-sm text-navy-400">Today</div>
           </div>
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
-            <div className="text-3xl font-bold text-white">
+          <div className="bg-white rounded-xl border border-navy-100 p-6">
+            <div className="text-3xl font-bold text-navy-900">
               {leads.filter(l => {
                 const date = new Date(l.created_at)
                 const weekAgo = new Date()
@@ -239,20 +239,20 @@ export default function LeadsPage({
                 return date > weekAgo
               }).length}
             </div>
-            <div className="text-sm text-zinc-500">Last 7 Days</div>
+            <div className="text-sm text-navy-400">Last 7 Days</div>
           </div>
         </div>
 
         {/* Search */}
         <form onSubmit={handleSearch} className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-navy-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by email, name, or company..."
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
+              className="w-full bg-white border border-navy-100 rounded-lg pl-11 pr-4 py-3 text-navy-900 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
             />
           </div>
         </form>
@@ -264,11 +264,11 @@ export default function LeadsPage({
           </div>
         ) : leads.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-zinc-600" />
+            <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-navy-500" />
             </div>
-            <h3 className="text-lg font-medium text-white mb-2">No leads yet</h3>
-            <p className="text-zinc-500">
+            <h3 className="text-lg font-medium text-navy-900 mb-2">No leads yet</h3>
+            <p className="text-navy-400">
               {searchQuery
                 ? 'No leads match your search.'
                 : 'Enable lead capture to start collecting leads.'}
@@ -276,28 +276,28 @@ export default function LeadsPage({
           </div>
         ) : (
           <>
-            <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+            <div className="bg-white rounded-xl border border-navy-100 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-zinc-800">
-                      <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                    <tr className="border-b border-navy-100">
+                      <th className="text-left px-4 py-3 text-xs font-medium text-navy-400 uppercase tracking-wider">
                         Contact
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                      <th className="text-left px-4 py-3 text-xs font-medium text-navy-400 uppercase tracking-wider">
                         Company
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                      <th className="text-left px-4 py-3 text-xs font-medium text-navy-400 uppercase tracking-wider">
                         Date
                       </th>
-                      <th className="text-right px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                      <th className="text-right px-4 py-3 text-xs font-medium text-navy-400 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800">
                     {leads.map((lead) => (
-                      <tr key={lead.id} className="hover:bg-zinc-800/50">
+                      <tr key={lead.id} className="hover:bg-navy-100/50">
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center">
@@ -305,14 +305,14 @@ export default function LeadsPage({
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
-                                <Mail className="w-4 h-4 text-zinc-500" />
-                                <span className="text-white">{lead.email}</span>
+                                <Mail className="w-4 h-4 text-navy-400" />
+                                <span className="text-navy-900">{lead.email}</span>
                               </div>
                               {lead.name && (
-                                <div className="text-sm text-zinc-500">{lead.name}</div>
+                                <div className="text-sm text-navy-400">{lead.name}</div>
                               )}
                               {lead.phone && (
-                                <div className="flex items-center gap-2 text-sm text-zinc-500">
+                                <div className="flex items-center gap-2 text-sm text-navy-400">
                                   <Phone className="w-3 h-3" />
                                   {lead.phone}
                                 </div>
@@ -322,16 +322,16 @@ export default function LeadsPage({
                         </td>
                         <td className="px-4 py-4">
                           {lead.company ? (
-                            <div className="flex items-center gap-2 text-zinc-300">
-                              <Building2 className="w-4 h-4 text-zinc-500" />
+                            <div className="flex items-center gap-2 text-navy-600">
+                              <Building2 className="w-4 h-4 text-navy-400" />
                               {lead.company}
                             </div>
                           ) : (
-                            <span className="text-zinc-600">—</span>
+                            <span className="text-navy-500">—</span>
                           )}
                         </td>
                         <td className="px-4 py-4">
-                          <div className="flex items-center gap-2 text-zinc-400">
+                          <div className="flex items-center gap-2 text-navy-500">
                             <Calendar className="w-4 h-4" />
                             {formatDate(lead.created_at)}
                           </div>
@@ -340,7 +340,7 @@ export default function LeadsPage({
                           <button
                             onClick={() => handleDelete(lead.id)}
                             disabled={deletingId === lead.id}
-                            className="p-2 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 rounded-lg transition-colors"
+                            className="p-2 hover:bg-red-500/10 text-navy-500 hover:text-red-400 rounded-lg transition-colors"
                           >
                             {deletingId === lead.id ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -359,7 +359,7 @@ export default function LeadsPage({
             {/* Pagination */}
             {pagination.totalPages > 1 && (
               <div className="flex items-center justify-between mt-6">
-                <div className="text-sm text-zinc-500">
+                <div className="text-sm text-navy-400">
                   Showing {(pagination.page - 1) * pagination.pageSize + 1} to{' '}
                   {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
                   {pagination.total} leads
@@ -370,11 +370,11 @@ export default function LeadsPage({
                     size="sm"
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                     disabled={pagination.page === 1}
-                    className="border-zinc-700"
+                    className="border-navy-200"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <span className="text-sm text-zinc-400">
+                  <span className="text-sm text-navy-500">
                     Page {pagination.page} of {pagination.totalPages}
                   </span>
                   <Button
@@ -382,7 +382,7 @@ export default function LeadsPage({
                     size="sm"
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                     disabled={pagination.page === pagination.totalPages}
-                    className="border-zinc-700"
+                    className="border-navy-200"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>

@@ -3,35 +3,6 @@
 import { useState, useCallback, useEffect, useRef, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import {
-  ArrowLeft,
-  Send,
-  Loader2,
-  Sparkles,
-  Copy,
-  Check,
-  ExternalLink,
-  Download,
-  Settings,
-  Monitor,
-  Tablet,
-  Smartphone,
-  Share2,
-  History,
-  Save,
-  BarChart3,
-  Files,
-  Archive,
-  Palette,
-  Search,
-  Users,
-  ClipboardList,
-  Code2,
-  MessageSquare,
-  FlaskConical,
-  Webhook,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { DocumentSettings } from '@/components/pagelink/document-settings'
 import { VersionHistory } from '@/components/pagelink/version-history'
 import { ShareModal } from '@/components/pagelink/share-modal'
@@ -112,6 +83,7 @@ export default function DocumentEditPage({
   const [isSaving, setIsSaving] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -133,7 +105,6 @@ export default function DocumentEditPage({
 
   const fetchDocument = async () => {
     try {
-      // First try to find by slug in pagelink_documents
       const response = await fetch(`/api/pagelink/documents/by-slug/${slug}`)
       if (response.ok) {
         const doc = await response.json()
@@ -144,7 +115,6 @@ export default function DocumentEditPage({
           setMessages(doc.chat_history)
         }
       } else {
-        // Document not found, redirect
         router.push('/dashboard/pages')
       }
     } catch (error) {
@@ -487,7 +457,6 @@ export default function DocumentEditPage({
   const handleABTestSave = async (abTestConfig: ABTestConfig) => {
     if (!document) return
 
-    // If enabling test for first time, set startedAt
     if (abTestConfig.enabled && !abTestConfig.startedAt) {
       abTestConfig.startedAt = new Date().toISOString()
     }
@@ -525,8 +494,8 @@ export default function DocumentEditPage({
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      <div className="h-screen flex items-center justify-center bg-cream-50">
+        <div className="text-navy-500">Loading...</div>
       </div>
     )
   }
@@ -538,247 +507,108 @@ export default function DocumentEditPage({
   const publicUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/${document.slug}`
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0a]">
+    <div className="h-screen flex flex-col bg-cream-50">
       {/* Header */}
-      <header className="flex-shrink-0 h-14 border-b border-white/5 flex items-center justify-between px-4">
+      <header className="flex-shrink-0 h-14 border-b border-navy-100 bg-white flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard/pages"
-            className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-navy-50 rounded-lg transition-colors text-navy-500"
           >
-            <ArrowLeft className="w-5 h-5 text-zinc-400" />
+            &larr;
           </Link>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center">
-              <Sparkles className="h-3.5 w-3.5 text-white" />
+            <div className="w-8 h-8 bg-navy-800 rounded-lg flex items-center justify-center">
+              <span className="text-cream-50 text-sm font-medium">AI</span>
             </div>
-            <span className="font-medium text-white">{documentTitle}</span>
+            <span className="font-serif font-semibold text-navy-900">{documentTitle}</span>
             {hasUnsavedChanges && (
-              <span className="text-xs text-zinc-500">• Unsaved</span>
+              <span className="text-xs text-navy-400">• Unsaved</span>
             )}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 rounded-lg border border-zinc-800">
-            <span className="text-sm text-zinc-400 font-mono truncate max-w-[180px]">
+          {/* Slug display */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-cream-100 rounded-lg border border-navy-100">
+            <span className="text-sm text-navy-500 font-mono truncate max-w-[160px]">
               /{document.slug}
             </span>
             <button
               onClick={handleCopyLink}
-              className="p-1 hover:bg-zinc-700 rounded transition-colors"
+              className="p-1 hover:bg-navy-100 rounded transition-colors text-navy-500"
             >
-              {copied ? (
-                <Check className="w-4 h-4 text-green-400" />
-              ) : (
-                <Copy className="w-4 h-4 text-zinc-400" />
-              )}
+              {copied ? '✓' : '⎘'}
             </button>
           </div>
 
-          <Link href={`/d/${document.slug}/analytics`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              title="Analytics"
-            >
-              <BarChart3 className="w-5 h-5 text-zinc-400" />
-            </Button>
+          {/* Quick actions */}
+          <Link href={`/d/${document.slug}/analytics`} className="px-3 py-2 text-navy-600 hover:bg-navy-50 rounded-lg text-sm transition-colors">
+            Analytics
           </Link>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowShareModal(true)}
-            title="Share"
-          >
-            <Share2 className="w-5 h-5 text-zinc-400" />
-          </Button>
+          <button onClick={() => setShowShareModal(true)} className="px-3 py-2 text-navy-600 hover:bg-navy-50 rounded-lg text-sm transition-colors">
+            Share
+          </button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowEmbed(true)}
-            title="Embed"
-          >
-            <Code2 className="w-5 h-5 text-zinc-400" />
-          </Button>
+          <button onClick={() => setShowSettings(true)} className="px-3 py-2 text-navy-600 hover:bg-navy-50 rounded-lg text-sm transition-colors">
+            Settings
+          </button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowHistory(true)}
-            title="Version History"
-          >
-            <History className="w-5 h-5 text-zinc-400" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowSettings(true)}
-            title="Settings"
-          >
-            <Settings className="w-5 h-5 text-zinc-400" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowBranding(true)}
-            title="Branding"
-          >
-            <Palette className="w-5 h-5 text-zinc-400" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowSeo(true)}
-            title="SEO Settings"
-          >
-            <Search className="w-5 h-5 text-zinc-400" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowLeadCapture(true)}
-            title="Lead Capture Settings"
-          >
-            <Users className="w-5 h-5 text-zinc-400" />
-          </Button>
-
-          <Link href={`/d/${document.slug}/leads`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              title="View Leads"
+          {/* More menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              className="px-3 py-2 text-navy-600 hover:bg-navy-50 rounded-lg text-sm transition-colors"
             >
-              <ClipboardList className="w-5 h-5 text-zinc-400" />
-            </Button>
-          </Link>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowFeedback(true)}
-            title="Feedback Settings"
-          >
-            <MessageSquare className="w-5 h-5 text-zinc-400" />
-          </Button>
-
-          <Link href={`/d/${document.slug}/feedback`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              title="View Feedback"
-            >
-              <MessageSquare className="w-5 h-5 text-zinc-400" />
-            </Button>
-          </Link>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowABTest(true)}
-            title="A/B Test Settings"
-          >
-            <FlaskConical className="w-5 h-5 text-zinc-400" />
-          </Button>
-
-          <Link href={`/d/${document.slug}/ab-test`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              title="View A/B Test Results"
-            >
-              <FlaskConical className="w-5 h-5 text-zinc-400" />
-            </Button>
-          </Link>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowWebhooks(true)}
-            title="Webhook Settings"
-          >
-            <Webhook className="w-5 h-5 text-zinc-400" />
-          </Button>
-
-          <Link href={`/d/${document.slug}/webhooks`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              title="View Webhook Logs"
-            >
-              <Webhook className="w-5 h-5 text-zinc-400" />
-            </Button>
-          </Link>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleDuplicate}
-            disabled={isDuplicating}
-            title="Duplicate"
-          >
-            {isDuplicating ? (
-              <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" />
-            ) : (
-              <Files className="w-5 h-5 text-zinc-400" />
+              More
+            </button>
+            {showMoreMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowMoreMenu(false)} />
+                <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-navy-100 py-1 w-48 z-20">
+                  <button onClick={() => { setShowEmbed(true); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">Embed Code</button>
+                  <button onClick={() => { setShowHistory(true); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">Version History</button>
+                  <button onClick={() => { setShowBranding(true); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">Branding</button>
+                  <button onClick={() => { setShowSeo(true); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">SEO Settings</button>
+                  <button onClick={() => { setShowLeadCapture(true); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">Lead Capture</button>
+                  <Link href={`/d/${document.slug}/leads`} className="block px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">View Leads</Link>
+                  <button onClick={() => { setShowFeedback(true); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">Feedback Settings</button>
+                  <Link href={`/d/${document.slug}/feedback`} className="block px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">View Feedback</Link>
+                  <button onClick={() => { setShowABTest(true); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">A/B Testing</button>
+                  <Link href={`/d/${document.slug}/ab-test`} className="block px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">A/B Test Results</Link>
+                  <button onClick={() => { setShowWebhooks(true); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">Webhooks</button>
+                  <Link href={`/d/${document.slug}/webhooks`} className="block px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">Webhook Logs</Link>
+                  <hr className="my-1 border-navy-100" />
+                  <button onClick={() => { handleDuplicate(); setShowMoreMenu(false); }} disabled={isDuplicating} className="w-full text-left px-3 py-2 text-sm text-navy-700 hover:bg-navy-50 disabled:opacity-50">
+                    {isDuplicating ? 'Duplicating...' : 'Duplicate'}
+                  </button>
+                  <button onClick={handleDownload} className="w-full text-left px-3 py-2 text-sm text-navy-700 hover:bg-navy-50">Download HTML</button>
+                  <button onClick={() => { handleArchive(); setShowMoreMenu(false); }} disabled={isArchiving} className="w-full text-left px-3 py-2 text-sm text-amber-600 hover:bg-navy-50 disabled:opacity-50">
+                    {isArchiving ? 'Archiving...' : 'Archive'}
+                  </button>
+                </div>
+              </>
             )}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleArchive}
-            disabled={isArchiving}
-            title="Archive"
-          >
-            {isArchiving ? (
-              <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" />
-            ) : (
-              <Archive className="w-5 h-5 text-zinc-400" />
-            )}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleDownload}
-            title="Download HTML"
-          >
-            <Download className="w-5 h-5 text-zinc-400" />
-          </Button>
+          </div>
 
           {hasUnsavedChanges && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={handleSave}
               disabled={isSaving}
-              className="border-zinc-700"
+              className="px-3 py-2 text-navy-600 border border-navy-200 hover:bg-navy-50 rounded-lg text-sm transition-colors disabled:opacity-50"
             >
-              {isSaving ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-1" />
-              )}
-              Save
-            </Button>
+              {isSaving ? 'Saving...' : 'Save'}
+            </button>
           )}
 
           <a
             href={publicUrl}
             target="_blank"
             rel="noopener noreferrer"
+            className="px-4 py-2 bg-navy-800 hover:bg-navy-700 text-cream-50 rounded-lg text-sm font-medium transition-colors"
           >
-            <Button className="bg-blue-600 hover:bg-blue-500">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              View Live
-            </Button>
+            View Live →
           </a>
         </div>
       </header>
@@ -786,17 +616,17 @@ export default function DocumentEditPage({
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Chat Panel */}
-        <div className="w-[420px] flex-shrink-0 border-r border-white/5 flex flex-col bg-[#0a0a0a]">
+        <div className="w-[380px] flex-shrink-0 border-r border-navy-100 flex flex-col bg-white">
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-6">
-                <div className="p-4 bg-gradient-to-br from-blue-500/20 to-violet-600/20 rounded-2xl mb-4">
-                  <Sparkles className="w-8 h-8 text-blue-400" />
+                <div className="w-16 h-16 bg-navy-100 rounded-2xl flex items-center justify-center mb-4">
+                  <span className="text-2xl">✨</span>
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">
                   Edit with AI
                 </h3>
-                <p className="text-sm text-zinc-500">
+                <p className="text-sm text-navy-500">
                   Describe the changes you want to make
                 </p>
               </div>
@@ -808,26 +638,22 @@ export default function DocumentEditPage({
                     className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
                   >
                     <div
-                      className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                      className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium ${
                         message.role === 'user'
-                          ? 'bg-zinc-700'
-                          : 'bg-gradient-to-br from-blue-500 to-violet-600'
+                          ? 'bg-navy-100 text-navy-600'
+                          : 'bg-navy-800 text-cream-50'
                       }`}
                     >
-                      {message.role === 'user' ? (
-                        <span className="text-xs font-medium text-white">You</span>
-                      ) : (
-                        <Sparkles className="w-4 h-4 text-white" />
-                      )}
+                      {message.role === 'user' ? 'You' : 'AI'}
                     </div>
                     <div
                       className={`flex-1 rounded-lg p-3 ${
                         message.role === 'user'
-                          ? 'bg-blue-600/20 border border-blue-500/30'
-                          : 'bg-zinc-900 border border-zinc-800'
+                          ? 'bg-navy-800 text-cream-50'
+                          : 'bg-cream-100 border border-navy-100 text-navy-800'
                       }`}
                     >
-                      <p className="text-sm text-zinc-300 whitespace-pre-wrap">
+                      <p className="text-sm whitespace-pre-wrap">
                         {message.content}
                       </p>
                     </div>
@@ -836,13 +662,13 @@ export default function DocumentEditPage({
 
                 {streamingContent && (
                   <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-white" />
+                    <div className="flex-shrink-0 w-8 h-8 bg-navy-800 rounded-lg flex items-center justify-center">
+                      <span className="text-cream-50 text-sm font-medium">AI</span>
                     </div>
-                    <div className="flex-1 bg-zinc-900 rounded-lg p-3 border border-zinc-800">
-                      <p className="text-sm text-zinc-300">
+                    <div className="flex-1 bg-cream-100 rounded-lg p-3 border border-navy-100">
+                      <p className="text-sm text-navy-700">
                         Updating document...
-                        <span className="inline-block w-2 h-4 bg-blue-500 animate-pulse ml-1" />
+                        <span className="inline-block w-2 h-4 bg-navy-600 animate-pulse ml-1" />
                       </p>
                     </div>
                   </div>
@@ -850,14 +676,14 @@ export default function DocumentEditPage({
 
                 {isGenerating && !streamingContent && (
                   <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center">
-                      <Loader2 className="w-4 h-4 text-white animate-spin" />
+                    <div className="flex-shrink-0 w-8 h-8 bg-navy-800 rounded-lg flex items-center justify-center">
+                      <span className="text-cream-50 text-sm animate-pulse">...</span>
                     </div>
-                    <div className="flex-1 bg-zinc-900 rounded-lg p-3 border border-zinc-800">
+                    <div className="flex-1 bg-cream-100 rounded-lg p-3 border border-navy-100">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:100ms]" />
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:200ms]" />
+                        <div className="w-2 h-2 bg-navy-400 rounded-full animate-bounce" />
+                        <div className="w-2 h-2 bg-navy-400 rounded-full animate-bounce [animation-delay:100ms]" />
+                        <div className="w-2 h-2 bg-navy-400 rounded-full animate-bounce [animation-delay:200ms]" />
                       </div>
                     </div>
                   </div>
@@ -868,7 +694,7 @@ export default function DocumentEditPage({
             )}
           </div>
 
-          <div className="flex-shrink-0 p-4 border-t border-white/5">
+          <div className="flex-shrink-0 p-4 border-t border-navy-100">
             <div className="relative">
               <textarea
                 ref={textareaRef}
@@ -876,68 +702,70 @@ export default function DocumentEditPage({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Describe changes..."
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                className="w-full bg-cream-50 border border-navy-200 rounded-xl px-4 py-3 pr-12 text-sm text-navy-800 placeholder-navy-400 resize-none focus:outline-none focus:ring-2 focus:ring-navy-300 focus:border-navy-300"
                 rows={1}
                 disabled={isGenerating}
               />
               <button
                 onClick={() => handleSendMessage()}
                 disabled={!input.trim() || isGenerating}
-                className="absolute right-2 bottom-2 p-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-lg transition-colors"
+                className="absolute right-2 bottom-2 p-2 bg-navy-800 hover:bg-navy-700 disabled:bg-navy-200 disabled:text-navy-400 text-cream-50 rounded-lg transition-colors"
               >
-                {isGenerating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
+                {isGenerating ? '...' : '→'}
               </button>
             </div>
           </div>
         </div>
 
         {/* Preview Panel */}
-        <div className="flex-1 flex flex-col bg-zinc-950">
-          <div className="flex-shrink-0 px-4 py-2 border-b border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+        <div className="flex-1 flex flex-col bg-cream-100">
+          <div className="flex-shrink-0 px-4 py-2 border-b border-navy-100 bg-white flex items-center justify-between">
+            <div className="flex items-center gap-1 bg-cream-100 p-1 rounded-lg">
               <button
                 onClick={() => setDeviceSize('desktop')}
-                className={`p-2 rounded ${
-                  deviceSize === 'desktop' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  deviceSize === 'desktop'
+                    ? 'bg-white text-navy-900 shadow-sm'
+                    : 'text-navy-500 hover:text-navy-700'
                 }`}
               >
-                <Monitor className="w-4 h-4" />
+                Desktop
               </button>
               <button
                 onClick={() => setDeviceSize('tablet')}
-                className={`p-2 rounded ${
-                  deviceSize === 'tablet' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  deviceSize === 'tablet'
+                    ? 'bg-white text-navy-900 shadow-sm'
+                    : 'text-navy-500 hover:text-navy-700'
                 }`}
               >
-                <Tablet className="w-4 h-4" />
+                Tablet
               </button>
               <button
                 onClick={() => setDeviceSize('mobile')}
-                className={`p-2 rounded ${
-                  deviceSize === 'mobile' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  deviceSize === 'mobile'
+                    ? 'bg-white text-navy-900 shadow-sm'
+                    : 'text-navy-500 hover:text-navy-700'
                 }`}
               >
-                <Smartphone className="w-4 h-4" />
+                Mobile
               </button>
             </div>
 
-            <span className="text-sm text-zinc-500">
+            <span className="text-sm text-navy-500">
               {document.view_count} views
             </span>
           </div>
 
-          <div className="flex-1 overflow-auto p-6 bg-zinc-900">
+          <div className="flex-1 overflow-auto p-6">
             <div
               className="h-full mx-auto transition-all duration-300"
               style={{ maxWidth: DEVICE_WIDTHS[deviceSize] }}
             >
               <iframe
                 srcDoc={documentHtml}
-                className="w-full h-full bg-white rounded-lg shadow-2xl"
+                className="w-full h-full bg-white rounded-xl shadow-lg border border-navy-100"
                 title="Document Preview"
                 sandbox="allow-scripts"
               />
@@ -946,7 +774,7 @@ export default function DocumentEditPage({
         </div>
       </div>
 
-      {/* Settings Modal */}
+      {/* Modals */}
       <DocumentSettings
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
@@ -965,7 +793,6 @@ export default function DocumentEditPage({
         onDelete={handleDelete}
       />
 
-      {/* Version History Modal */}
       <VersionHistory
         isOpen={showHistory}
         onClose={() => setShowHistory(false)}
@@ -973,7 +800,6 @@ export default function DocumentEditPage({
         onRestore={handleRestore}
       />
 
-      {/* Share Modal */}
       <ShareModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
@@ -983,7 +809,6 @@ export default function DocumentEditPage({
         documentId={document.id}
       />
 
-      {/* Branding Modal */}
       <BrandingSettings
         isOpen={showBranding}
         onClose={() => setShowBranding(false)}
@@ -999,7 +824,6 @@ export default function DocumentEditPage({
         onSave={handleBrandingSave}
       />
 
-      {/* SEO Modal */}
       <SEOSettings
         isOpen={showSeo}
         onClose={() => setShowSeo(false)}
@@ -1012,7 +836,6 @@ export default function DocumentEditPage({
         onSave={handleSeoSave}
       />
 
-      {/* Lead Capture Modal */}
       <LeadCaptureSettings
         isOpen={showLeadCapture}
         onClose={() => setShowLeadCapture(false)}
@@ -1032,7 +855,6 @@ export default function DocumentEditPage({
         onSave={handleLeadCaptureSave}
       />
 
-      {/* Embed Modal */}
       <EmbedSettings
         isOpen={showEmbed}
         onClose={() => setShowEmbed(false)}
@@ -1040,7 +862,6 @@ export default function DocumentEditPage({
         documentTitle={documentTitle}
       />
 
-      {/* Feedback Modal */}
       <FeedbackSettings
         isOpen={showFeedback}
         onClose={() => setShowFeedback(false)}
@@ -1059,7 +880,6 @@ export default function DocumentEditPage({
         onSave={handleFeedbackSave}
       />
 
-      {/* A/B Test Modal */}
       <ABTestSettings
         isOpen={showABTest}
         onClose={() => setShowABTest(false)}
@@ -1069,7 +889,6 @@ export default function DocumentEditPage({
         onSave={handleABTestSave}
       />
 
-      {/* Webhooks Modal */}
       <WebhookSettings
         isOpen={showWebhooks}
         onClose={() => setShowWebhooks(false)}
