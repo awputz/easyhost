@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Settings, Save, Loader2, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { ChatPanel } from '@/components/pagelink/chat-panel'
 import { PreviewPanel } from '@/components/pagelink/preview-panel'
@@ -70,7 +69,6 @@ export default function EditPagePage({
     setIsGenerating(true)
     setStreamingContent('')
 
-    // Add user message immediately
     const userMessage: PageChat = {
       id: `temp-${Date.now()}`,
       page_id: id,
@@ -127,7 +125,6 @@ export default function EditPagePage({
               } else if (data.type === 'done') {
                 if (data.html) {
                   setHtml(data.html)
-                  // Extract title from HTML
                   const titleMatch = data.html.match(/<h1[^>]*>([^<]+)<\/h1>/i)
                   if (titleMatch) {
                     setTitle(titleMatch[1].replace(/<[^>]+>/g, '').trim())
@@ -143,7 +140,6 @@ export default function EditPagePage({
         }
       }
 
-      // Add assistant message
       const assistantMessage: PageChat = {
         id: `temp-${Date.now()}-assistant`,
         page_id: id,
@@ -154,7 +150,6 @@ export default function EditPagePage({
       setMessages(prev => [...prev, assistantMessage])
     } catch (error) {
       console.error('Error generating:', error)
-      // Add error message
       const errorMessage: PageChat = {
         id: `temp-${Date.now()}-error`,
         page_id: id,
@@ -213,22 +208,22 @@ export default function EditPagePage({
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-zinc-950">
-        <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+      <div className="h-screen flex items-center justify-center bg-cream-50">
+        <div className="text-navy-500">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-950">
+    <div className="h-screen flex flex-col bg-cream-50">
       {/* Header */}
-      <header className="flex-shrink-0 h-14 border-b border-zinc-800 flex items-center justify-between px-4">
+      <header className="flex-shrink-0 h-14 border-b border-navy-100 bg-white flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard/pages"
-            className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-navy-50 rounded-lg transition-colors text-navy-500"
           >
-            <ArrowLeft className="w-5 h-5 text-zinc-400" />
+            &larr;
           </Link>
           <input
             type="text"
@@ -237,57 +232,52 @@ export default function EditPagePage({
               setTitle(e.target.value)
               setHasChanges(true)
             }}
-            className="bg-transparent text-white font-medium focus:outline-none focus:ring-2 focus:ring-violet-500/50 rounded px-2 py-1"
+            className="bg-transparent text-navy-900 font-medium focus:outline-none focus:ring-2 focus:ring-navy-200 rounded px-2 py-1"
             placeholder="Untitled Document"
           />
           {hasChanges && (
-            <span className="text-xs text-zinc-500">Unsaved changes</span>
+            <span className="text-xs text-navy-400">Unsaved changes</span>
           )}
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className={`p-2 rounded-lg transition-colors ${
-              showSettings ? 'bg-zinc-700 text-white' : 'hover:bg-zinc-800 text-zinc-400'
+            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              showSettings ? 'bg-navy-100 text-navy-900' : 'hover:bg-navy-50 text-navy-500'
             }`}
           >
-            <Settings className="w-5 h-5" />
+            Settings
           </button>
           <button
             onClick={handleDelete}
-            className="p-2 hover:bg-red-900/50 text-zinc-400 hover:text-red-400 rounded-lg transition-colors"
+            className="px-3 py-1.5 hover:bg-red-50 text-navy-400 hover:text-red-600 rounded-lg transition-colors text-sm"
           >
-            <Trash2 className="w-5 h-5" />
+            Delete
           </button>
           <button
             onClick={handleSave}
             disabled={!hasChanges || isSaving}
-            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-lg transition-colors text-sm font-medium"
+            className="px-4 py-1.5 bg-navy-800 hover:bg-navy-700 disabled:bg-navy-200 disabled:text-navy-400 text-cream-50 rounded-lg transition-colors text-sm font-medium"
           >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            Save
+            {isSaving ? 'Saving...' : 'Save'}
           </button>
         </div>
       </header>
 
-      {/* Settings Panel (Collapsible) */}
+      {/* Settings Panel */}
       {showSettings && (
-        <div className="flex-shrink-0 border-b border-zinc-800 bg-zinc-900 px-4 py-3">
+        <div className="flex-shrink-0 border-b border-navy-100 bg-white px-4 py-3">
           <div className="flex items-center gap-6">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Theme</label>
+              <label className="text-xs text-navy-400 block mb-1">Theme</label>
               <select
                 value={theme}
                 onChange={(e) => {
                   setTheme(e.target.value as PageTheme)
                   setHasChanges(true)
                 }}
-                className="bg-zinc-800 border border-zinc-700 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                className="bg-white border border-navy-200 text-navy-900 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-navy-200"
               >
                 <option value="professional-dark">Professional Dark</option>
                 <option value="clean-light">Clean Light</option>
@@ -296,14 +286,14 @@ export default function EditPagePage({
               </select>
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Template</label>
+              <label className="text-xs text-navy-400 block mb-1">Template</label>
               <select
                 value={templateType || ''}
                 onChange={(e) => {
                   setTemplateType(e.target.value as PageTemplateType || null)
                   setHasChanges(true)
                 }}
-                className="bg-zinc-800 border border-zinc-700 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                className="bg-white border border-navy-200 text-navy-900 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-navy-200"
               >
                 <option value="">Custom</option>
                 <option value="pitch-deck">Pitch Deck</option>
@@ -316,14 +306,14 @@ export default function EditPagePage({
               </select>
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Public URL</label>
-              <p className="text-sm text-zinc-300">
+              <label className="text-xs text-navy-400 block mb-1">Public URL</label>
+              <p className="text-sm text-navy-600">
                 {page?.slug ? (
                   <a
                     href={`/p/${page.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-violet-400 hover:underline"
+                    className="text-navy-700 hover:underline"
                   >
                     /p/{page.slug}
                   </a>
@@ -336,10 +326,10 @@ export default function EditPagePage({
         </div>
       )}
 
-      {/* Main Content - Split Pane */}
+      {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Chat Panel */}
-        <div className="w-[400px] flex-shrink-0 border-r border-zinc-800">
+        <div className="w-[400px] flex-shrink-0 border-r border-navy-100 bg-white">
           <ChatPanel
             pageId={id}
             messages={messages}
@@ -350,7 +340,7 @@ export default function EditPagePage({
         </div>
 
         {/* Preview Panel */}
-        <div className="flex-1">
+        <div className="flex-1 bg-cream-100">
           <PreviewPanel
             html={html}
             theme={theme}

@@ -4,27 +4,15 @@ import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  ArrowLeft,
-  Eye,
-  Users,
-  TrendingUp,
-  TrendingDown,
   Globe,
   ExternalLink,
-  Calendar,
-  BarChart3,
-  Loader2,
   Clock,
-  MousePointer,
   Monitor,
-  Smartphone,
-  Tablet,
-  RefreshCw,
-  Download,
-  ArrowUpRight,
-  ArrowDownRight,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  MousePointer,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import {
   LineChart,
   BarChart,
@@ -153,56 +141,53 @@ export default function DocumentAnalyticsPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      <div className="min-h-screen bg-cream-50 flex items-center justify-center">
+        <div className="text-navy-500">Loading analytics...</div>
       </div>
     )
   }
 
   if (error || !analytics) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-screen bg-cream-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-400 mb-4">{error || 'Failed to load analytics'}</p>
-          <Button onClick={fetchAnalytics}>Retry</Button>
+          <p className="text-red-500 mb-4">{error || 'Failed to load analytics'}</p>
+          <button onClick={fetchAnalytics} className="px-4 py-2 bg-navy-800 text-cream-50 rounded-lg">Retry</button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-cream-50">
       {/* Header */}
-      <header className="border-b border-white/5 px-6 py-4 sticky top-0 bg-zinc-950/90 backdrop-blur-sm z-10">
+      <header className="border-b border-navy-100 px-6 py-4 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href={`/d/${slug}`}
-              className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-navy-50 rounded-lg transition-colors text-navy-500"
             >
-              <ArrowLeft className="w-5 h-5 text-zinc-400" />
+              &larr;
             </Link>
             <div>
-              <h1 className="text-lg font-semibold">{analytics.document.title}</h1>
-              <p className="text-sm text-zinc-500">Advanced Analytics</p>
+              <h1 className="text-lg font-semibold text-navy-900">{analytics.document.title}</h1>
+              <p className="text-sm text-navy-500">Advanced Analytics</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={fetchAnalytics}
-              className="border-zinc-700"
+              className="px-3 py-1.5 text-sm border border-navy-200 rounded-lg hover:bg-navy-50 text-navy-600"
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
-            </Button>
+            </button>
 
             <select
               value={days}
               onChange={(e) => setDays(parseInt(e.target.value))}
-              className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="bg-white border border-navy-200 rounded-lg px-3 py-2 text-sm text-navy-900 focus:outline-none focus:ring-2 focus:ring-navy-200"
             >
               <option value={7}>Last 7 days</option>
               <option value={30}>Last 30 days</option>
@@ -213,17 +198,16 @@ export default function DocumentAnalyticsPage({
               href={`/${slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-navy-500 hover:text-navy-700 transition-colors"
             >
-              <ExternalLink className="w-4 h-4" />
-              View Page
+              View Page &rarr;
             </a>
           </div>
         </div>
       </header>
 
       {/* Tabs */}
-      <div className="border-b border-white/5">
+      <div className="border-b border-navy-100 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-1">
             {(['overview', 'engagement', 'audience'] as const).map((tab) => (
@@ -232,13 +216,13 @@ export default function DocumentAnalyticsPage({
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-3 text-sm font-medium transition-colors relative ${
                   activeTab === tab
-                    ? 'text-white'
-                    : 'text-zinc-500 hover:text-zinc-300'
+                    ? 'text-navy-900'
+                    : 'text-navy-400 hover:text-navy-600'
                 }`}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 {activeTab === tab && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-navy-800" />
                 )}
               </button>
             ))}
@@ -251,106 +235,97 @@ export default function DocumentAnalyticsPage({
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+              <div className="bg-white rounded-xl p-4 border border-navy-100">
                 <div className="flex items-center gap-2 mb-2">
-                  <Eye className="w-4 h-4 text-blue-400" />
-                  <span className="text-xs text-zinc-500">Total Views</span>
+                  <span className="text-navy-400">👁</span>
+                  <span className="text-xs text-navy-400">Total Views</span>
                 </div>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold text-navy-900">
                   {analytics.document.totalViews.toLocaleString()}
                 </div>
-                <div className="text-xs text-zinc-500 mt-1">All time</div>
+                <div className="text-xs text-navy-400 mt-1">All time</div>
               </div>
 
-              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+              <div className="bg-white rounded-xl p-4 border border-navy-100">
                 <div className="flex items-center gap-2 mb-2">
-                  <BarChart3 className="w-4 h-4 text-blue-400" />
-                  <span className="text-xs text-zinc-500">Period Views</span>
+                  <span className="text-navy-400">📊</span>
+                  <span className="text-xs text-navy-400">Period Views</span>
                 </div>
                 <div className="flex items-end gap-2">
-                  <span className="text-2xl font-bold">
+                  <span className="text-2xl font-bold text-navy-900">
                     {analytics.summary.views.toLocaleString()}
                   </span>
                   {analytics.summary.viewsTrend !== null && (
-                    <span className={`text-sm flex items-center ${
-                      analytics.summary.viewsTrend >= 0 ? 'text-green-400' : 'text-red-400'
+                    <span className={`text-sm ${
+                      analytics.summary.viewsTrend >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {analytics.summary.viewsTrend >= 0 ? (
-                        <ArrowUpRight className="w-3 h-3" />
-                      ) : (
-                        <ArrowDownRight className="w-3 h-3" />
-                      )}
+                      {analytics.summary.viewsTrend >= 0 ? '↑' : '↓'}
                       {Math.abs(analytics.summary.viewsTrend)}%
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+              <div className="bg-white rounded-xl p-4 border border-navy-100">
                 <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-4 h-4 text-violet-400" />
-                  <span className="text-xs text-zinc-500">Unique Visitors</span>
+                  <span className="text-navy-400">👥</span>
+                  <span className="text-xs text-navy-400">Unique Visitors</span>
                 </div>
                 <div className="flex items-end gap-2">
-                  <span className="text-2xl font-bold">
+                  <span className="text-2xl font-bold text-navy-900">
                     {analytics.summary.uniqueVisitors.toLocaleString()}
                   </span>
                   {analytics.summary.visitorsTrend !== null && (
-                    <span className={`text-sm flex items-center ${
-                      analytics.summary.visitorsTrend >= 0 ? 'text-green-400' : 'text-red-400'
+                    <span className={`text-sm ${
+                      analytics.summary.visitorsTrend >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {analytics.summary.visitorsTrend >= 0 ? (
-                        <ArrowUpRight className="w-3 h-3" />
-                      ) : (
-                        <ArrowDownRight className="w-3 h-3" />
-                      )}
+                      {analytics.summary.visitorsTrend >= 0 ? '↑' : '↓'}
                       {Math.abs(analytics.summary.visitorsTrend)}%
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+              <div className="bg-white rounded-xl p-4 border border-navy-100">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-green-400" />
-                  <span className="text-xs text-zinc-500">Avg. Daily</span>
+                  <span className="text-navy-400">📈</span>
+                  <span className="text-xs text-navy-400">Avg. Daily</span>
                 </div>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold text-navy-900">
                   {analytics.summary.avgViewsPerDay}
                 </div>
-                <div className="text-xs text-zinc-500 mt-1">views/day</div>
+                <div className="text-xs text-navy-400 mt-1">views/day</div>
               </div>
 
-              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+              <div className="bg-white rounded-xl p-4 border border-navy-100">
                 <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs text-zinc-500">Avg. Time</span>
+                  <span className="text-navy-400">⏱</span>
+                  <span className="text-xs text-navy-400">Avg. Time</span>
                 </div>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold text-navy-900">
                   {formatTime(analytics.summary.avgTimeOnPage)}
                 </div>
-                <div className="text-xs text-zinc-500 mt-1">on page</div>
+                <div className="text-xs text-navy-400 mt-1">on page</div>
               </div>
 
-              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+              <div className="bg-white rounded-xl p-4 border border-navy-100">
                 <div className="flex items-center gap-2 mb-2">
-                  <MousePointer className="w-4 h-4 text-cyan-400" />
-                  <span className="text-xs text-zinc-500">Bounce Rate</span>
+                  <span className="text-navy-400">🎯</span>
+                  <span className="text-xs text-navy-400">Bounce Rate</span>
                 </div>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold text-navy-900">
                   {analytics.summary.bounceRate}%
                 </div>
-                <div className="text-xs text-zinc-500 mt-1">
+                <div className="text-xs text-navy-400 mt-1">
                   {analytics.summary.bounceRate < 40 ? 'Good' : analytics.summary.bounceRate < 60 ? 'Average' : 'Needs work'}
                 </div>
               </div>
             </div>
 
             {/* Views Chart */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-8">
-              <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-400" />
-                Views Over Time
+            <div className="bg-white border border-navy-100 rounded-xl p-6 mb-8">
+              <h2 className="text-lg font-semibold text-navy-900 mb-6 flex items-center gap-2">
+                📅 Views Over Time
               </h2>
               <div className="pl-10">
                 <LineChart
@@ -360,7 +335,7 @@ export default function DocumentAnalyticsPage({
                   showArea={true}
                 />
               </div>
-              <div className="flex justify-between text-xs text-zinc-500 mt-2 pl-10">
+              <div className="flex justify-between text-xs text-navy-400 mt-2 pl-10">
                 <span>{formatShortDate(analytics.dailyStats[0]?.date)}</span>
                 <span>{formatShortDate(analytics.dailyStats[analytics.dailyStats.length - 1]?.date)}</span>
               </div>
@@ -369,7 +344,7 @@ export default function DocumentAnalyticsPage({
             {/* Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* Traffic Sources */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <div className="bg-white border border-navy-100 rounded-xl p-6">
                 <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Globe className="w-5 h-5 text-blue-400" />
                   Traffic Sources
@@ -385,7 +360,7 @@ export default function DocumentAnalyticsPage({
               </div>
 
               {/* Geographic Stats */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <div className="bg-white border border-navy-100 rounded-xl p-6">
                 <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Globe className="w-5 h-5 text-violet-400" />
                   Top Countries
@@ -395,7 +370,7 @@ export default function DocumentAnalyticsPage({
             </div>
 
             {/* Hourly Distribution */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <div className="bg-white border border-navy-100 rounded-xl p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-amber-400" />
                 Traffic by Hour
@@ -432,11 +407,11 @@ export default function DocumentAnalyticsPage({
             </div>
 
             {/* Funnel */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-8">
+            <div className="bg-white border border-navy-100 rounded-xl p-6 mb-8">
               <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-green-400" />
                 Conversion Funnel
-                <span className="text-sm font-normal text-zinc-500 ml-2">
+                <span className="text-sm font-normal text-navy-400 ml-2">
                   {analytics.funnelStats.conversionRate}% conversion rate
                 </span>
               </h2>
@@ -445,15 +420,15 @@ export default function DocumentAnalyticsPage({
 
             {/* Engagement Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <div className="bg-white border border-navy-100 rounded-xl p-6">
                 <h2 className="text-lg font-semibold mb-4">Engagement Metrics</h2>
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-zinc-400">Engaged Views</span>
-                      <span className="text-white">{analytics.engagementStats.engagedViews}</span>
+                      <span className="text-navy-500">Engaged Views</span>
+                      <span className="text-navy-900">{analytics.engagementStats.engagedViews}</span>
                     </div>
-                    <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-navy-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-green-500 rounded-full"
                         style={{
@@ -464,10 +439,10 @@ export default function DocumentAnalyticsPage({
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-zinc-400">Scroll Depth</span>
-                      <span className="text-white">{analytics.engagementStats.avgScrollDepth}%</span>
+                      <span className="text-navy-500">Scroll Depth</span>
+                      <span className="text-navy-900">{analytics.engagementStats.avgScrollDepth}%</span>
                     </div>
-                    <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-navy-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-blue-500 rounded-full"
                         style={{ width: `${analytics.engagementStats.avgScrollDepth}%` }}
@@ -477,7 +452,7 @@ export default function DocumentAnalyticsPage({
                 </div>
               </div>
 
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <div className="bg-white border border-navy-100 rounded-xl p-6">
                 <h2 className="text-lg font-semibold mb-4">Performance Tips</h2>
                 <ul className="space-y-3 text-sm">
                   {analytics.engagementStats.bounceRate > 50 && (
@@ -517,7 +492,7 @@ export default function DocumentAnalyticsPage({
             {/* Device & Browser */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* Devices */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <div className="bg-white border border-navy-100 rounded-xl p-6">
                 <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
                   <Monitor className="w-5 h-5 text-blue-400" />
                   Devices
@@ -534,7 +509,7 @@ export default function DocumentAnalyticsPage({
               </div>
 
               {/* Browsers */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <div className="bg-white border border-navy-100 rounded-xl p-6">
                 <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
                   <Globe className="w-5 h-5 text-violet-400" />
                   Browsers
@@ -551,18 +526,18 @@ export default function DocumentAnalyticsPage({
             </div>
 
             {/* Geographic Distribution */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-8">
+            <div className="bg-white border border-navy-100 rounded-xl p-6 mb-8">
               <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
                 <Globe className="w-5 h-5 text-cyan-400" />
                 Geographic Distribution
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-sm font-medium text-zinc-400 mb-4">Top Countries</h3>
+                  <h3 className="text-sm font-medium text-navy-500 mb-4">Top Countries</h3>
                   <WorldMapChart data={analytics.geoStats} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-zinc-400 mb-4">Distribution</h3>
+                  <h3 className="text-sm font-medium text-navy-500 mb-4">Distribution</h3>
                   <DonutChart
                     data={analytics.geoStats.slice(0, 5).map((g, i) => ({
                       label: g.country,
@@ -575,7 +550,7 @@ export default function DocumentAnalyticsPage({
             </div>
 
             {/* Traffic Sources Detail */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <div className="bg-white border border-navy-100 rounded-xl p-6">
               <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
                 <ExternalLink className="w-5 h-5 text-green-400" />
                 Traffic Sources
@@ -583,31 +558,31 @@ export default function DocumentAnalyticsPage({
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-zinc-800">
-                      <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider py-3">
+                    <tr className="border-b border-navy-100">
+                      <th className="text-left text-xs font-medium text-navy-400 uppercase tracking-wider py-3">
                         Source
                       </th>
-                      <th className="text-right text-xs font-medium text-zinc-500 uppercase tracking-wider py-3">
+                      <th className="text-right text-xs font-medium text-navy-400 uppercase tracking-wider py-3">
                         Visitors
                       </th>
-                      <th className="text-right text-xs font-medium text-zinc-500 uppercase tracking-wider py-3">
+                      <th className="text-right text-xs font-medium text-navy-400 uppercase tracking-wider py-3">
                         Share
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {analytics.referrerStats.map((ref) => (
-                      <tr key={ref.source} className="border-b border-zinc-800/50">
+                      <tr key={ref.source} className="border-b border-navy-100/50">
                         <td className="py-3">
-                          <span className="text-white">
+                          <span className="text-navy-900">
                             {ref.source === 'direct' ? 'Direct / Unknown' : ref.source}
                           </span>
                         </td>
-                        <td className="py-3 text-right text-zinc-400">
+                        <td className="py-3 text-right text-navy-500">
                           {ref.count.toLocaleString()}
                         </td>
                         <td className="py-3 text-right">
-                          <span className="text-zinc-400">
+                          <span className="text-navy-500">
                             {((ref.count / analytics.summary.views) * 100).toFixed(1)}%
                           </span>
                         </td>
