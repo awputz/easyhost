@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import { PasswordGate } from './password-gate'
 import { EmailGate, LeadData } from './email-gate'
+import { FeedbackWidget } from './feedback-widget'
 import type { LeadCaptureConfig } from './lead-capture-settings'
+import type { FeedbackConfig } from './feedback-settings'
 
 export interface BrandingConfig {
   logoUrl?: string | null
@@ -24,6 +26,7 @@ interface DocumentViewerProps {
   showBadge: boolean
   branding?: BrandingConfig | null
   leadCapture?: LeadCaptureConfig | null
+  feedbackConfig?: FeedbackConfig | null
 }
 
 const FONT_IMPORTS: Record<string, string> = {
@@ -57,6 +60,7 @@ export function DocumentViewer({
   showBadge,
   branding,
   leadCapture,
+  feedbackConfig,
 }: DocumentViewerProps) {
   const [html, setHtml] = useState(initialHtml)
   const [leadCaptured, setLeadCaptured] = useState(false)
@@ -144,10 +148,19 @@ export function DocumentViewer({
   }
 
   return (
-    <div
-      dangerouslySetInnerHTML={{ __html: processedHtml }}
-      style={{ minHeight: '100vh' }}
-    />
+    <>
+      <div
+        dangerouslySetInnerHTML={{ __html: processedHtml }}
+        style={{ minHeight: '100vh' }}
+      />
+      {feedbackConfig?.enabled && documentId && (
+        <FeedbackWidget
+          documentId={documentId}
+          documentSlug={slug}
+          config={feedbackConfig}
+        />
+      )}
+    </>
   )
 }
 

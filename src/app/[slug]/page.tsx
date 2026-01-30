@@ -45,6 +45,19 @@ interface LeadCaptureData {
   previewPercentage: number
 }
 
+interface FeedbackConfigData {
+  enabled: boolean
+  feedbackType: 'comments' | 'reactions' | 'rating' | 'all'
+  allowAnonymous: boolean
+  requireEmail: boolean
+  moderationEnabled: boolean
+  notifyOnNew: boolean
+  notifyEmail: string | null
+  placeholder: string
+  thankYouMessage: string
+  position: 'bottom-right' | 'bottom-left' | 'bottom-center'
+}
+
 interface DocumentData {
   id: string
   slug: string
@@ -60,6 +73,7 @@ interface DocumentData {
   allowed_emails: string[] | null
   seo: SEOData | null
   lead_capture: LeadCaptureData | null
+  feedback_config: FeedbackConfigData | null
 }
 
 interface DocumentAccessResult {
@@ -86,7 +100,7 @@ async function getDocumentAccess(slug: string): Promise<DocumentAccessResult> {
 
   const { data: doc, error } = await supabase
     .from('pagelink_documents')
-    .select('id, slug, title, html, theme, custom_branding, is_public, show_pagelink_badge, view_count, password_hash, expires_at, allowed_emails, seo, lead_capture')
+    .select('id, slug, title, html, theme, custom_branding, is_public, show_pagelink_badge, view_count, password_hash, expires_at, allowed_emails, seo, lead_capture, feedback_config')
     .eq('slug', slug)
     .single()
 
@@ -146,6 +160,7 @@ function getDemoDocument(slug: string): DocumentData | null {
       allowed_emails: null,
       seo: null,
       lead_capture: null,
+      feedback_config: null,
     }
   }
   return null
@@ -267,6 +282,7 @@ export default async function PublicDocumentPage({
         showBadge={result.document.show_pagelink_badge}
         branding={result.document.custom_branding}
         leadCapture={result.document.lead_capture}
+        feedbackConfig={result.document.feedback_config}
       />
     )
   }
@@ -283,6 +299,7 @@ export default async function PublicDocumentPage({
       showBadge={doc.show_pagelink_badge}
       branding={doc.custom_branding}
       leadCapture={doc.lead_capture}
+      feedbackConfig={doc.feedback_config}
     />
   )
 }

@@ -27,6 +27,7 @@ import {
   Users,
   ClipboardList,
   Code2,
+  MessageSquare,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocumentSettings } from '@/components/pagelink/document-settings'
@@ -36,6 +37,7 @@ import { BrandingSettings, BrandingConfig } from '@/components/pagelink/branding
 import { SEOSettings, SEOConfig } from '@/components/pagelink/seo-settings'
 import { LeadCaptureSettings, LeadCaptureConfig } from '@/components/pagelink/lead-capture-settings'
 import { EmbedSettings } from '@/components/pagelink/embed-settings'
+import { FeedbackSettings, FeedbackConfig } from '@/components/pagelink/feedback-settings'
 
 interface ChatMessage {
   id: string
@@ -61,6 +63,7 @@ interface Document {
   custom_branding: BrandingConfig | null
   seo: SEOConfig | null
   lead_capture: LeadCaptureConfig | null
+  feedback_config: FeedbackConfig | null
 }
 
 type DeviceSize = 'desktop' | 'tablet' | 'mobile'
@@ -96,6 +99,7 @@ export default function DocumentEditPage({
   const [showSeo, setShowSeo] = useState(false)
   const [showLeadCapture, setShowLeadCapture] = useState(false)
   const [showEmbed, setShowEmbed] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
@@ -455,6 +459,23 @@ export default function DocumentEditPage({
     }
   }
 
+  const handleFeedbackSave = async (feedbackConfig: FeedbackConfig) => {
+    if (!document) return
+
+    const response = await fetch(`/api/pagelink/documents/${document.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feedbackConfig }),
+    })
+
+    if (response.ok) {
+      const updated = await response.json()
+      setDocument({ ...document, feedback_config: updated.feedback_config })
+    } else {
+      throw new Error('Failed to save feedback settings')
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -588,6 +609,25 @@ export default function DocumentEditPage({
               title="View Leads"
             >
               <ClipboardList className="w-5 h-5 text-zinc-400" />
+            </Button>
+          </Link>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowFeedback(true)}
+            title="Feedback Settings"
+          >
+            <MessageSquare className="w-5 h-5 text-zinc-400" />
+          </Button>
+
+          <Link href={`/d/${document.slug}/feedback`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="View Feedback"
+            >
+              <MessageSquare className="w-5 h-5 text-zinc-400" />
             </Button>
           </Link>
 
@@ -913,6 +953,25 @@ export default function DocumentEditPage({
         onClose={() => setShowEmbed(false)}
         documentSlug={document.slug}
         documentTitle={documentTitle}
+      />
+
+      {/* Feedback Modal */}
+      <FeedbackSettings
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+        config={document.feedback_config || {
+          enabled: false,
+          feedbackType: 'comments',
+          allowAnonymous: true,
+          requireEmail: false,
+          moderationEnabled: true,
+          notifyOnNew: false,
+          notifyEmail: null,
+          placeholder: 'Share your thoughts on this document...',
+          thankYouMessage: 'Thank you for your feedback!',
+          position: 'bottom-right',
+        }}
+        onSave={handleFeedbackSave}
       />
     </div>
   )
