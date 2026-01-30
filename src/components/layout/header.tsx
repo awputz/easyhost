@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,39 +45,45 @@ export function Header({ profile, onMenuClick }: HeaderProps) {
     : profile?.username?.slice(0, 2).toUpperCase() || '??'
 
   return (
-    <header className="h-16 border-b border-border bg-background flex items-center justify-between px-4 gap-4">
+    <header className="h-20 border-b border-white/5 bg-[#050505] flex items-center justify-between px-6 gap-4">
       {/* Left section */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="lg:hidden"
+        <button
+          className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-all duration-300"
           onClick={onMenuClick}
         >
           <Menu className="h-5 w-5" />
-        </Button>
+        </button>
 
         {/* Search */}
         <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+          <input
             type="search"
-            placeholder="Search assets..."
-            className="w-64 pl-9 bg-secondary border-0"
+            placeholder="Search..."
+            className="w-72 h-11 pl-11 pr-4 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:bg-white/[0.05] focus:outline-none transition-all duration-300"
           />
         </div>
       </div>
 
       {/* Right section */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {/* Upload button */}
-        <Button size="sm" className="hidden sm:flex">
-          <Upload className="h-4 w-4 mr-2" />
+        <Button
+          variant="secondary"
+          size="sm"
+          className="hidden sm:flex gap-2"
+          onClick={() => router.push('/dashboard')}
+        >
+          <Upload className="h-4 w-4" />
           Upload
         </Button>
-        <Button size="icon" className="sm:hidden">
+        <button
+          className="sm:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/15 transition-all duration-300"
+          onClick={() => router.push('/dashboard')}
+        >
           <Upload className="h-4 w-4" />
-        </Button>
+        </button>
 
         {/* Notifications */}
         <NotificationsDropdown />
@@ -86,42 +91,58 @@ export function Header({ profile, onMenuClick }: HeaderProps) {
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-              <Avatar className="h-9 w-9">
+            <button className="relative h-10 w-10 rounded-full overflow-hidden ring-2 ring-white/10 hover:ring-white/20 transition-all duration-300">
+              <Avatar className="h-10 w-10">
                 <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || 'User'} />
-                <AvatarFallback className="bg-primary text-primary-foreground">
+                <AvatarFallback className="bg-white/10 text-white text-sm font-medium">
                   {initials}
                 </AvatarFallback>
               </Avatar>
-            </Button>
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuLabel className="font-normal">
+          <DropdownMenuContent
+            className="w-56 bg-[#0a0a0a] border-white/10 rounded-xl p-1"
+            align="end"
+            forceMount
+          >
+            <DropdownMenuLabel className="font-normal px-3 py-2">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">
+                <p className="text-sm font-medium leading-none text-white">
                   {profile?.full_name || profile?.username}
                 </p>
-                <p className="text-xs leading-none text-muted-foreground">
+                <p className="text-xs leading-none text-white/50">
                   {profile?.email}
                 </p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
-              <User className="mr-2 h-4 w-4" />
+            <DropdownMenuSeparator className="bg-white/5" />
+            <DropdownMenuItem
+              onClick={() => router.push('/dashboard/settings')}
+              className="px-3 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/5 cursor-pointer"
+            >
+              <User className="mr-3 h-4 w-4" />
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
-              <Settings className="mr-2 h-4 w-4" />
+            <DropdownMenuItem
+              onClick={() => router.push('/dashboard/settings')}
+              className="px-3 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/5 cursor-pointer"
+            >
+              <Settings className="mr-3 h-4 w-4" />
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/dashboard/help')}>
-              <HelpCircle className="mr-2 h-4 w-4" />
+            <DropdownMenuItem
+              onClick={() => router.push('/dashboard/help')}
+              className="px-3 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/5 cursor-pointer"
+            >
+              <HelpCircle className="mr-3 h-4 w-4" />
               Help
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-              <LogOut className="mr-2 h-4 w-4" />
+            <DropdownMenuSeparator className="bg-white/5" />
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="px-3 py-2 rounded-lg text-[#ff453a] hover:bg-[#ff453a]/10 cursor-pointer"
+            >
+              <LogOut className="mr-3 h-4 w-4" />
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

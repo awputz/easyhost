@@ -13,13 +13,12 @@ import {
   Settings,
   HelpCircle,
   ChevronLeft,
+  ChevronRight,
   FileText,
   Sparkles,
   Plus,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 
 interface SidebarProps {
   collapsed?: boolean
@@ -47,43 +46,59 @@ export function Sidebar({ collapsed = false, onCollapse }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300',
+        'flex flex-col h-screen border-r border-white/5 bg-[#050505] transition-all duration-300',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
       {/* Logo */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Sparkles className="h-4 w-4 text-white" />
+      <div className="h-20 flex items-center justify-between px-4 border-b border-white/5">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+            <Sparkles className="h-4 w-4 text-black" />
           </div>
           {!collapsed && (
-            <span className="font-semibold text-lg text-sidebar-foreground">
+            <span className="font-semibold text-lg tracking-tight">
               Pagelink
             </span>
           )}
         </Link>
-        {onCollapse && !collapsed && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-sidebar-foreground"
-            onClick={() => onCollapse(true)}
+        {onCollapse && (
+          <button
+            onClick={() => onCollapse(!collapsed)}
+            className={cn(
+              "w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all duration-300",
+              collapsed && "absolute -right-4 bg-[#050505] border border-white/10"
+            )}
           >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </button>
         )}
       </div>
 
       {/* Create Button */}
       {!collapsed && (
-        <div className="p-3">
+        <div className="p-4">
           <Link
             href="/create"
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-blue-500 to-violet-600 hover:from-blue-600 hover:to-violet-700 text-white rounded-lg text-sm font-medium transition-all"
+            className="flex items-center justify-center gap-2 w-full py-3 bg-white hover:bg-white/90 text-black rounded-xl text-sm font-medium transition-all duration-300"
           >
             <Plus className="h-4 w-4" />
             New Document
+          </Link>
+        </div>
+      )}
+
+      {collapsed && (
+        <div className="p-2 flex justify-center">
+          <Link
+            href="/create"
+            className="w-10 h-10 flex items-center justify-center bg-white hover:bg-white/90 text-black rounded-xl transition-all duration-300"
+          >
+            <Plus className="h-5 w-5" />
           </Link>
         </div>
       )}
@@ -99,11 +114,13 @@ export function Sidebar({ collapsed = false, onCollapse }: SidebarProps) {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
                   isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                    ? 'bg-white/10 text-white'
+                    : 'text-white/50 hover:text-white hover:bg-white/5',
+                  collapsed && 'justify-center px-2'
                 )}
+                title={collapsed ? item.name : undefined}
               >
                 <item.icon className="h-5 w-5 flex-shrink-0" />
                 {!collapsed && <span>{item.name}</span>}
@@ -112,7 +129,7 @@ export function Sidebar({ collapsed = false, onCollapse }: SidebarProps) {
           })}
         </nav>
 
-        <Separator className="my-4 mx-2 bg-sidebar-border" />
+        <div className="mx-4 my-4 h-px bg-white/5" />
 
         <nav className="space-y-1 px-2">
           {secondaryNavigation.map((item) => {
@@ -122,11 +139,13 @@ export function Sidebar({ collapsed = false, onCollapse }: SidebarProps) {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
                   isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                    ? 'bg-white/10 text-white'
+                    : 'text-white/50 hover:text-white hover:bg-white/5',
+                  collapsed && 'justify-center px-2'
                 )}
+                title={collapsed ? item.name : undefined}
               >
                 <item.icon className="h-5 w-5 flex-shrink-0" />
                 {!collapsed && <span>{item.name}</span>}
@@ -138,20 +157,20 @@ export function Sidebar({ collapsed = false, onCollapse }: SidebarProps) {
 
       {/* Storage indicator */}
       {!collapsed && (
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="space-y-2">
+        <div className="p-4 border-t border-white/5">
+          <div className="space-y-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-sidebar-foreground/70">Documents</span>
-              <span className="text-sidebar-foreground">0 / 3</span>
+              <span className="text-white/40">Documents</span>
+              <span className="text-white/70">0 / 3</span>
             </div>
-            <div className="h-1.5 bg-sidebar-accent rounded-full overflow-hidden">
+            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-500 to-violet-600 rounded-full transition-all"
+                className="h-full bg-white rounded-full transition-all duration-500"
                 style={{ width: '0%' }}
               />
             </div>
-            <p className="text-xs text-sidebar-foreground/50">
-              Free plan • <Link href="/pricing" className="text-blue-400 hover:underline">Upgrade</Link>
+            <p className="text-xs text-white/30">
+              Free plan · <Link href="/pricing" className="text-[#0071e3] hover:underline">Upgrade</Link>
             </p>
           </div>
         </div>
