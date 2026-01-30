@@ -76,6 +76,7 @@ export async function PUT(
       customBranding,
       seo,
       leadCapture,
+      feedbackConfig,
     } = body
 
     if (!isSupabaseConfigured()) {
@@ -116,6 +117,7 @@ export async function PUT(
     if (customBranding !== undefined) updates.custom_branding = customBranding
     if (seo !== undefined) updates.seo = seo
     if (leadCapture !== undefined) updates.lead_capture = leadCapture
+    if (feedbackConfig !== undefined) updates.feedback_config = feedbackConfig
 
     // Handle password
     if (removePassword) {
