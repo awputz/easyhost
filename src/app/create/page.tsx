@@ -3,24 +3,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import {
-  ArrowLeft,
-  Send,
-  Loader2,
-  Sparkles,
-  Copy,
-  Check,
-  ExternalLink,
-  Download,
-  Settings,
-  Monitor,
-  Tablet,
-  Smartphone,
-  Share2,
-  Pencil,
-  Save,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
 
 interface ChatMessage {
   id: string
@@ -48,7 +30,6 @@ export default function CreatePage() {
   const [documentTitle, setDocumentTitle] = useState('Untitled Document')
   const [deviceSize, setDeviceSize] = useState<DeviceSize>('desktop')
   const [copied, setCopied] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -60,7 +41,6 @@ export default function CreatePage() {
     if (initialPrompt) {
       sessionStorage.removeItem('pagelink_initial_prompt')
       setInput(initialPrompt)
-      // Auto-submit after a short delay
       setTimeout(() => {
         handleSendMessage(initialPrompt)
       }, 100)
@@ -88,7 +68,6 @@ export default function CreatePage() {
     setIsGenerating(true)
     setStreamingContent('')
 
-    // Add user message
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -137,13 +116,11 @@ export default function CreatePage() {
                 fullResponse += data.content
                 setStreamingContent(fullResponse)
 
-                // Extract HTML from response
                 const htmlMatch = fullResponse.match(/```html\n([\s\S]*?)```/)?.[1] ||
                                   fullResponse.match(/<!DOCTYPE html[\s\S]*<\/html>/i)?.[0]
                 if (htmlMatch) {
                   extractedHtml = htmlMatch
                   setDocumentHtml(extractedHtml)
-                  // Extract title
                   const titleMatch = extractedHtml.match(/<title>([^<]+)<\/title>/i)
                   if (titleMatch) {
                     setDocumentTitle(titleMatch[1])
@@ -163,7 +140,6 @@ export default function CreatePage() {
         }
       }
 
-      // Add assistant message (summarized response)
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
@@ -219,13 +195,11 @@ export default function CreatePage() {
 
     setIsSaving(true)
     try {
-      // If we already have a slug, the document is saved - go to edit page
       if (documentSlug) {
         router.push(`/d/${documentSlug}`)
         return
       }
 
-      // Otherwise, save new document via API
       const response = await fetch('/api/pagelink/documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -257,84 +231,69 @@ export default function CreatePage() {
   const publicUrl = documentSlug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/${documentSlug}` : null
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0a]">
+    <div className="h-screen flex flex-col bg-cream-50">
       {/* Header */}
-      <header className="flex-shrink-0 h-14 border-b border-white/5 flex items-center justify-between px-4">
+      <header className="flex-shrink-0 h-14 border-b border-navy-100 bg-white flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <Link
-            href="/"
-            className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+            href="/dashboard"
+            className="p-2 hover:bg-navy-50 rounded-lg transition-colors text-navy-500"
           >
-            <ArrowLeft className="w-5 h-5 text-zinc-400" />
+            &larr;
           </Link>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center">
-              <Sparkles className="h-3.5 w-3.5 text-white" />
+            <div className="w-8 h-8 bg-navy-800 rounded-lg flex items-center justify-center">
+              <span className="text-cream-50 text-sm font-medium">AI</span>
             </div>
-            <span className="font-medium text-white">{documentTitle}</span>
+            <input
+              type="text"
+              value={documentTitle}
+              onChange={(e) => setDocumentTitle(e.target.value)}
+              className="text-lg font-serif font-semibold text-navy-900 bg-transparent border-none focus:outline-none focus:ring-0 placeholder:text-navy-300 w-64"
+              placeholder="Untitled Document"
+            />
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {publicUrl && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 rounded-lg border border-zinc-800">
-              <span className="text-sm text-zinc-400 font-mono truncate max-w-[200px]">
-                pagelink.com/{documentSlug}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-cream-100 rounded-lg border border-navy-100">
+              <span className="text-sm text-navy-500 font-mono truncate max-w-[200px]">
+                /{documentSlug}
               </span>
               <button
                 onClick={handleCopyLink}
-                className="p-1 hover:bg-zinc-700 rounded transition-colors"
+                className="p-1 hover:bg-navy-100 rounded transition-colors text-navy-500"
               >
-                {copied ? (
-                  <Check className="w-4 h-4 text-green-400" />
-                ) : (
-                  <Copy className="w-4 h-4 text-zinc-400" />
-                )}
+                {copied ? '✓' : '⎘'}
               </button>
             </div>
           )}
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowSettings(!showSettings)}
-            className={showSettings ? 'bg-zinc-800' : ''}
-          >
-            <Settings className="w-5 h-5 text-zinc-400" />
-          </Button>
-
           {documentHtml && (
             <>
-              <Button
-                variant="ghost"
-                size="icon"
+              <button
                 onClick={handleDownload}
+                className="px-3 py-2 text-navy-600 hover:bg-navy-50 rounded-lg text-sm transition-colors"
               >
-                <Download className="w-5 h-5 text-zinc-400" />
-              </Button>
+                Download
+              </button>
 
-              <Button
-                variant="outline"
-                className="border-zinc-700"
+              <button
                 onClick={handleCopyLink}
                 disabled={!documentSlug}
+                className="px-3 py-2 text-navy-600 hover:bg-navy-50 rounded-lg text-sm transition-colors disabled:opacity-50"
               >
-                <Share2 className="w-4 h-4 mr-2" />
                 Share
-              </Button>
+              </button>
 
-              <Button
-                className="bg-blue-600 hover:bg-blue-500"
+              <button
+                className="px-4 py-2 bg-navy-800 hover:bg-navy-700 text-cream-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                 onClick={handleSaveAndEdit}
                 disabled={isSaving}
               >
-                {isSaving ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Pencil className="w-4 h-4 mr-2" />
-                )}
-                Edit & Settings
-              </Button>
+                {isSaving ? 'Saving...' : 'Save & Edit'}
+              </button>
             </>
           )}
         </div>
@@ -343,25 +302,27 @@ export default function CreatePage() {
       {/* Main Content - Two Panel Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Chat Panel */}
-        <div className="w-[420px] flex-shrink-0 border-r border-white/5 flex flex-col bg-[#0a0a0a]">
+        <div className="w-[380px] flex-shrink-0 border-r border-navy-100 flex flex-col bg-white">
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 && !streamingContent ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-6">
-                <div className="p-4 bg-gradient-to-br from-blue-500/20 to-violet-600/20 rounded-2xl mb-4">
-                  <Sparkles className="w-8 h-8 text-blue-400" />
+                <div className="w-16 h-16 bg-navy-100 rounded-2xl flex items-center justify-center mb-4">
+                  <span className="text-2xl">✨</span>
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">
                   Describe your document
                 </h3>
-                <p className="text-sm text-zinc-500 mb-6">
-                  Tell me what you want to create and I'll build a beautiful, shareable page for you.
+                <p className="text-sm text-navy-500 mb-8">
+                  Tell me what you want to create and I&apos;ll build a beautiful, shareable page for you.
                 </p>
                 <div className="space-y-2 w-full">
-                  <p className="text-xs text-zinc-600 uppercase tracking-wide">Quick Examples</p>
+                  <p className="font-mono text-xs text-navy-400 uppercase tracking-wider mb-3">
+                    Quick Examples
+                  </p>
                   {[
                     'Create a pitch deck for my AI startup',
-                    'Make an investment memo for 146 West 28th St',
+                    'Make an investment memo for a real estate deal',
                     'Build a consulting proposal for a 3-month project',
                   ].map((example, i) => (
                     <button
@@ -370,7 +331,7 @@ export default function CreatePage() {
                         setInput(example)
                         setTimeout(() => handleSendMessage(example), 100)
                       }}
-                      className="w-full text-left p-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm text-zinc-300 transition-colors"
+                      className="w-full text-left p-3 rounded-lg bg-cream-50 hover:bg-cream-100 border border-navy-100 text-sm text-navy-700 transition-colors"
                     >
                       {example}
                     </button>
@@ -385,26 +346,22 @@ export default function CreatePage() {
                     className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
                   >
                     <div
-                      className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                      className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium ${
                         message.role === 'user'
-                          ? 'bg-zinc-700'
-                          : 'bg-gradient-to-br from-blue-500 to-violet-600'
+                          ? 'bg-navy-100 text-navy-600'
+                          : 'bg-navy-800 text-cream-50'
                       }`}
                     >
-                      {message.role === 'user' ? (
-                        <span className="text-xs font-medium text-white">You</span>
-                      ) : (
-                        <Sparkles className="w-4 h-4 text-white" />
-                      )}
+                      {message.role === 'user' ? 'You' : 'AI'}
                     </div>
                     <div
                       className={`flex-1 rounded-lg p-3 ${
                         message.role === 'user'
-                          ? 'bg-blue-600/20 border border-blue-500/30'
-                          : 'bg-zinc-900 border border-zinc-800'
+                          ? 'bg-navy-800 text-cream-50'
+                          : 'bg-cream-100 border border-navy-100 text-navy-800'
                       }`}
                     >
-                      <p className="text-sm text-zinc-300 whitespace-pre-wrap">
+                      <p className="text-sm whitespace-pre-wrap">
                         {message.content}
                       </p>
                     </div>
@@ -414,13 +371,13 @@ export default function CreatePage() {
                 {/* Streaming Response */}
                 {streamingContent && (
                   <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-white" />
+                    <div className="flex-shrink-0 w-8 h-8 bg-navy-800 rounded-lg flex items-center justify-center">
+                      <span className="text-cream-50 text-sm font-medium">AI</span>
                     </div>
-                    <div className="flex-1 bg-zinc-900 rounded-lg p-3 border border-zinc-800">
-                      <p className="text-sm text-zinc-300">
+                    <div className="flex-1 bg-cream-100 rounded-lg p-3 border border-navy-100">
+                      <p className="text-sm text-navy-700">
                         Generating your document...
-                        <span className="inline-block w-2 h-4 bg-blue-500 animate-pulse ml-1" />
+                        <span className="inline-block w-2 h-4 bg-navy-600 animate-pulse ml-1" />
                       </p>
                     </div>
                   </div>
@@ -429,14 +386,14 @@ export default function CreatePage() {
                 {/* Loading */}
                 {isGenerating && !streamingContent && (
                   <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center">
-                      <Loader2 className="w-4 h-4 text-white animate-spin" />
+                    <div className="flex-shrink-0 w-8 h-8 bg-navy-800 rounded-lg flex items-center justify-center">
+                      <span className="text-cream-50 text-sm animate-pulse">...</span>
                     </div>
-                    <div className="flex-1 bg-zinc-900 rounded-lg p-3 border border-zinc-800">
+                    <div className="flex-1 bg-cream-100 rounded-lg p-3 border border-navy-100">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:100ms]" />
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:200ms]" />
+                        <div className="w-2 h-2 bg-navy-400 rounded-full animate-bounce" />
+                        <div className="w-2 h-2 bg-navy-400 rounded-full animate-bounce [animation-delay:100ms]" />
+                        <div className="w-2 h-2 bg-navy-400 rounded-full animate-bounce [animation-delay:200ms]" />
                       </div>
                     </div>
                   </div>
@@ -448,7 +405,7 @@ export default function CreatePage() {
           </div>
 
           {/* Input Area */}
-          <div className="flex-shrink-0 p-4 border-t border-white/5">
+          <div className="flex-shrink-0 p-4 border-t border-navy-100">
             <div className="relative">
               <textarea
                 ref={textareaRef}
@@ -456,59 +413,58 @@ export default function CreatePage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Describe what you want to create or change..."
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                className="w-full bg-cream-50 border border-navy-200 rounded-xl px-4 py-3 pr-12 text-sm text-navy-800 placeholder-navy-400 resize-none focus:outline-none focus:ring-2 focus:ring-navy-300 focus:border-navy-300"
                 rows={1}
                 disabled={isGenerating}
               />
               <button
                 onClick={() => handleSendMessage()}
                 disabled={!input.trim() || isGenerating}
-                className="absolute right-2 bottom-2 p-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-lg transition-colors"
+                className="absolute right-2 bottom-2 p-2 bg-navy-800 hover:bg-navy-700 disabled:bg-navy-200 disabled:text-navy-400 text-cream-50 rounded-lg transition-colors"
               >
-                {isGenerating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
+                {isGenerating ? '...' : '→'}
               </button>
             </div>
-            <p className="text-xs text-zinc-600 mt-2 text-center">
-              Enter to send • Shift+Enter for new line
+            <p className="text-xs text-navy-400 mt-2 text-center">
+              Enter to send · Shift+Enter for new line
             </p>
           </div>
         </div>
 
         {/* Preview Panel */}
-        <div className="flex-1 flex flex-col bg-zinc-950">
+        <div className="flex-1 flex flex-col bg-cream-100">
           {/* Preview Header */}
-          <div className="flex-shrink-0 px-4 py-2 border-b border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex-shrink-0 px-4 py-2 border-b border-navy-100 bg-white flex items-center justify-between">
+            <div className="flex items-center gap-1 bg-cream-100 p-1 rounded-lg">
               <button
                 onClick={() => setDeviceSize('desktop')}
-                className={`p-2 rounded ${
-                  deviceSize === 'desktop' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  deviceSize === 'desktop'
+                    ? 'bg-white text-navy-900 shadow-sm'
+                    : 'text-navy-500 hover:text-navy-700'
                 }`}
-                title="Desktop"
               >
-                <Monitor className="w-4 h-4" />
+                Desktop
               </button>
               <button
                 onClick={() => setDeviceSize('tablet')}
-                className={`p-2 rounded ${
-                  deviceSize === 'tablet' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  deviceSize === 'tablet'
+                    ? 'bg-white text-navy-900 shadow-sm'
+                    : 'text-navy-500 hover:text-navy-700'
                 }`}
-                title="Tablet"
               >
-                <Tablet className="w-4 h-4" />
+                Tablet
               </button>
               <button
                 onClick={() => setDeviceSize('mobile')}
-                className={`p-2 rounded ${
-                  deviceSize === 'mobile' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  deviceSize === 'mobile'
+                    ? 'bg-white text-navy-900 shadow-sm'
+                    : 'text-navy-500 hover:text-navy-700'
                 }`}
-                title="Mobile"
               >
-                <Smartphone className="w-4 h-4" />
+                Mobile
               </button>
             </div>
 
@@ -517,16 +473,15 @@ export default function CreatePage() {
                 href={publicUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
+                className="text-sm text-navy-500 hover:text-navy-700 transition-colors"
               >
-                <ExternalLink className="w-4 h-4" />
-                Open in new tab
+                Open in new tab →
               </a>
             )}
           </div>
 
           {/* Preview Content */}
-          <div className="flex-1 overflow-auto p-6 bg-zinc-900">
+          <div className="flex-1 overflow-auto p-6">
             <div
               className="h-full mx-auto transition-all duration-300"
               style={{ maxWidth: DEVICE_WIDTHS[deviceSize] }}
@@ -534,20 +489,20 @@ export default function CreatePage() {
               {documentHtml ? (
                 <iframe
                   srcDoc={documentHtml}
-                  className="w-full h-full bg-white rounded-lg shadow-2xl"
+                  className="w-full h-full bg-white rounded-xl shadow-lg border border-navy-100"
                   title="Document Preview"
                   sandbox="allow-scripts"
                 />
               ) : (
-                <div className="h-full flex items-center justify-center rounded-xl border-2 border-dashed border-zinc-800">
+                <div className="h-full flex items-center justify-center rounded-xl border-2 border-dashed border-navy-200 bg-white">
                   <div className="text-center">
-                    <div className="w-20 h-20 mx-auto mb-4 bg-zinc-800 rounded-2xl flex items-center justify-center">
-                      <Sparkles className="w-10 h-10 text-zinc-600" />
+                    <div className="w-16 h-16 mx-auto mb-4 bg-cream-100 rounded-2xl flex items-center justify-center">
+                      <span className="text-3xl">✨</span>
                     </div>
-                    <p className="text-zinc-400 text-lg font-medium">
+                    <p className="text-navy-700 text-lg font-medium font-serif">
                       Your document will appear here
                     </p>
-                    <p className="text-zinc-600 text-sm mt-2">
+                    <p className="text-navy-500 text-sm mt-2">
                       Describe what you want to create in the chat
                     </p>
                   </div>
