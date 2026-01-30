@@ -194,17 +194,23 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       {/* Header */}
-      <header className="border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold">
+      <header className="border-b border-navy-100 bg-white">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="font-serif text-xl font-semibold text-navy-900 tracking-tight">
             Pagelink
           </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/login">
-              <Button variant="ghost">Sign in</Button>
+          <div className="flex items-center gap-6">
+            <Link
+              href="/login"
+              className="text-navy-600 hover:text-navy-900 transition-colors text-sm"
+            >
+              Log in
             </Link>
-            <Link href="/signup">
-              <Button>Get started</Button>
+            <Link
+              href="/signup"
+              className="px-4 py-2 bg-navy-800 hover:bg-navy-700 text-cream-50 rounded-lg text-sm font-medium transition-colors"
+            >
+              Get started
             </Link>
           </div>
         </div>
@@ -360,9 +366,9 @@ export default function PricingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t mt-20 py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Pagelink. All rights reserved.</p>
+      <footer className="border-t border-navy-100 mt-20 py-8">
+        <div className="max-w-5xl mx-auto px-6 text-center text-sm text-navy-500">
+          <p>&copy; 2025 Pagelink. All rights reserved.</p>
         </div>
       </footer>
     </div>
