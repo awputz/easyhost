@@ -26,6 +26,7 @@ import {
   Search,
   Users,
   ClipboardList,
+  Code2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocumentSettings } from '@/components/pagelink/document-settings'
@@ -34,6 +35,7 @@ import { ShareModal } from '@/components/pagelink/share-modal'
 import { BrandingSettings, BrandingConfig } from '@/components/pagelink/branding-settings'
 import { SEOSettings, SEOConfig } from '@/components/pagelink/seo-settings'
 import { LeadCaptureSettings, LeadCaptureConfig } from '@/components/pagelink/lead-capture-settings'
+import { EmbedSettings } from '@/components/pagelink/embed-settings'
 
 interface ChatMessage {
   id: string
@@ -93,6 +95,7 @@ export default function DocumentEditPage({
   const [showBranding, setShowBranding] = useState(false)
   const [showSeo, setShowSeo] = useState(false)
   const [showLeadCapture, setShowLeadCapture] = useState(false)
+  const [showEmbed, setShowEmbed] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
@@ -527,6 +530,15 @@ export default function DocumentEditPage({
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => setShowEmbed(true)}
+            title="Embed"
+          >
+            <Code2 className="w-5 h-5 text-zinc-400" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setShowHistory(true)}
             title="Version History"
           >
@@ -893,6 +905,14 @@ export default function DocumentEditPage({
           previewPercentage: 30,
         }}
         onSave={handleLeadCaptureSave}
+      />
+
+      {/* Embed Modal */}
+      <EmbedSettings
+        isOpen={showEmbed}
+        onClose={() => setShowEmbed(false)}
+        documentSlug={document.slug}
+        documentTitle={documentTitle}
       />
     </div>
   )
