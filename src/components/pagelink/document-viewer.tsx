@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { PasswordGate } from './password-gate'
 import { EmailGate, LeadData } from './email-gate'
 import { FeedbackWidget } from './feedback-widget'
 import type { LeadCaptureConfig } from './lead-capture-settings'
 import type { FeedbackConfig } from './feedback-settings'
+import type { ABTestConfig, ABVariant } from './ab-test-settings'
 
 export interface BrandingConfig {
   logoUrl?: string | null
@@ -27,6 +28,7 @@ interface DocumentViewerProps {
   branding?: BrandingConfig | null
   leadCapture?: LeadCaptureConfig | null
   feedbackConfig?: FeedbackConfig | null
+  abTestConfig?: ABTestConfig | null
 }
 
 const FONT_IMPORTS: Record<string, string> = {
@@ -61,9 +63,82 @@ export function DocumentViewer({
   branding,
   leadCapture,
   feedbackConfig,
+  abTestConfig,
 }: DocumentViewerProps) {
   const [html, setHtml] = useState(initialHtml)
   const [leadCaptured, setLeadCaptured] = useState(false)
+  const [selectedVariant, setSelectedVariant] = useState<ABVariant | null>(null)
+  const [viewTracked, setViewTracked] = useState(false)
+
+  // Select A/B test variant
+  useEffect(() => {
+    if (abTestConfig?.enabled && abTestConfig.variants.length > 0 && documentId) {
+      // Check if user already has an assigned variant
+      const storedVariantId = localStorage.getItem(`pagelink_ab_${documentId}`)
+
+      if (storedVariantId) {
+        const variant = abTestConfig.variants.find(v => v.id === storedVariantId)
+        if (variant) {
+          setSelectedVariant(variant)
+          setHtml(variant.html)
+          return
+        }
+      }
+
+      // Assign a new variant based on traffic split
+      const random = Math.random() * 100
+      let cumulativePercent = 0
+
+      for (const variant of abTestConfig.variants) {
+        cumulativePercent += variant.trafficPercent
+        if (random <= cumulativePercent) {
+          setSelectedVariant(variant)
+          setHtml(variant.html)
+          localStorage.setItem(`pagelink_ab_${documentId}`, variant.id)
+          break
+        }
+      }
+    }
+  }, [abTestConfig, documentId])
+
+  // Track A/B test view event
+  useEffect(() => {
+    if (selectedVariant && documentId && !viewTracked) {
+      setViewTracked(true)
+      fetch(`/api/pagelink/documents/${documentId}/ab-test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          variantId: selectedVariant.id,
+          eventType: 'view',
+        }),
+      }).catch(() => {
+        // Silently fail - analytics shouldn't break the page
+      })
+    }
+  }, [selectedVariant, documentId, viewTracked])
+
+  // Track A/B test conversions (clicks on goal elements)
+  const trackConversion = useCallback(() => {
+    if (selectedVariant && documentId && abTestConfig?.goalType === 'clicks') {
+      // Check if already converted this session
+      const converted = sessionStorage.getItem(`pagelink_ab_converted_${documentId}`)
+      if (converted) return
+
+      fetch(`/api/pagelink/documents/${documentId}/ab-test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          variantId: selectedVariant.id,
+          eventType: 'conversion',
+        }),
+      }).then(() => {
+        sessionStorage.setItem(`pagelink_ab_converted_${documentId}`, 'true')
+      }).catch(() => {
+        // Silently fail
+      })
+    }
+  }, [selectedVariant, documentId, abTestConfig?.goalType])
 
   // Check localStorage for lead capture bypass
   useEffect(() => {
@@ -147,11 +222,26 @@ export function DocumentViewer({
     processedHtml = processedHtml.replace('</body>', `${getPagelinkBadge()}</body>`)
   }
 
+  // Add A/B test conversion tracking script
+  if (abTestConfig?.enabled && selectedVariant && abTestConfig.goalType === 'clicks' && abTestConfig.goalSelector) {
+    const conversionScript = getABConversionScript(documentId || '', selectedVariant.id, abTestConfig.goalSelector)
+    processedHtml = processedHtml.replace('</body>', `${conversionScript}</body>`)
+  }
+
   return (
     <>
       <div
         dangerouslySetInnerHTML={{ __html: processedHtml }}
         style={{ minHeight: '100vh' }}
+        onClick={(e) => {
+          // Track conversions on click if A/B testing is enabled
+          if (abTestConfig?.enabled && abTestConfig.goalType === 'clicks' && abTestConfig.goalSelector) {
+            const target = e.target as HTMLElement
+            if (target.matches(abTestConfig.goalSelector) || target.closest(abTestConfig.goalSelector)) {
+              trackConversion()
+            }
+          }
+        }}
       />
       {feedbackConfig?.enabled && documentId && (
         <FeedbackWidget
@@ -310,4 +400,45 @@ function getPagelinkBadge(): string {
   </svg>
   Made with Pagelink
 </a>`
+}
+
+function getABConversionScript(documentId: string, variantId: string, goalSelector: string): string {
+  return `
+<script>
+(function() {
+  // A/B Test Conversion Tracking
+  var converted = sessionStorage.getItem('pagelink_ab_converted_${documentId}');
+  if (converted) return;
+
+  var selector = '${goalSelector.replace(/'/g, "\\'")}';
+  var docId = '${documentId}';
+  var varId = '${variantId}';
+
+  function trackConversion() {
+    if (sessionStorage.getItem('pagelink_ab_converted_' + docId)) return;
+
+    fetch('/api/pagelink/documents/' + docId + '/ab-test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        variantId: varId,
+        eventType: 'conversion'
+      })
+    }).then(function() {
+      sessionStorage.setItem('pagelink_ab_converted_' + docId, 'true');
+    }).catch(function() {});
+  }
+
+  document.addEventListener('click', function(e) {
+    var target = e.target;
+    while (target && target !== document) {
+      if (target.matches && target.matches(selector)) {
+        trackConversion();
+        return;
+      }
+      target = target.parentElement;
+    }
+  }, true);
+})();
+</script>`
 }

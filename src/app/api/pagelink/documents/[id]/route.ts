@@ -77,6 +77,7 @@ export async function PUT(
       seo,
       leadCapture,
       feedbackConfig,
+      abTestConfig,
     } = body
 
     if (!isSupabaseConfigured()) {
@@ -118,6 +119,7 @@ export async function PUT(
     if (seo !== undefined) updates.seo = seo
     if (leadCapture !== undefined) updates.lead_capture = leadCapture
     if (feedbackConfig !== undefined) updates.feedback_config = feedbackConfig
+    if (abTestConfig !== undefined) updates.ab_test_config = abTestConfig
 
     // Handle password
     if (removePassword) {

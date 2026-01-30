@@ -28,6 +28,7 @@ import {
   ClipboardList,
   Code2,
   MessageSquare,
+  FlaskConical,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocumentSettings } from '@/components/pagelink/document-settings'
@@ -38,6 +39,7 @@ import { SEOSettings, SEOConfig } from '@/components/pagelink/seo-settings'
 import { LeadCaptureSettings, LeadCaptureConfig } from '@/components/pagelink/lead-capture-settings'
 import { EmbedSettings } from '@/components/pagelink/embed-settings'
 import { FeedbackSettings, FeedbackConfig } from '@/components/pagelink/feedback-settings'
+import { ABTestSettings, ABTestConfig } from '@/components/pagelink/ab-test-settings'
 
 interface ChatMessage {
   id: string
@@ -64,6 +66,7 @@ interface Document {
   seo: SEOConfig | null
   lead_capture: LeadCaptureConfig | null
   feedback_config: FeedbackConfig | null
+  ab_test_config: ABTestConfig | null
 }
 
 type DeviceSize = 'desktop' | 'tablet' | 'mobile'
@@ -100,6 +103,7 @@ export default function DocumentEditPage({
   const [showLeadCapture, setShowLeadCapture] = useState(false)
   const [showEmbed, setShowEmbed] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
+  const [showABTest, setShowABTest] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
@@ -476,6 +480,28 @@ export default function DocumentEditPage({
     }
   }
 
+  const handleABTestSave = async (abTestConfig: ABTestConfig) => {
+    if (!document) return
+
+    // If enabling test for first time, set startedAt
+    if (abTestConfig.enabled && !abTestConfig.startedAt) {
+      abTestConfig.startedAt = new Date().toISOString()
+    }
+
+    const response = await fetch(`/api/pagelink/documents/${document.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ abTestConfig }),
+    })
+
+    if (response.ok) {
+      const updated = await response.json()
+      setDocument({ ...document, ab_test_config: updated.ab_test_config })
+    } else {
+      throw new Error('Failed to save A/B test settings')
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -628,6 +654,25 @@ export default function DocumentEditPage({
               title="View Feedback"
             >
               <MessageSquare className="w-5 h-5 text-zinc-400" />
+            </Button>
+          </Link>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowABTest(true)}
+            title="A/B Test Settings"
+          >
+            <FlaskConical className="w-5 h-5 text-zinc-400" />
+          </Button>
+
+          <Link href={`/d/${document.slug}/ab-test`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="View A/B Test Results"
+            >
+              <FlaskConical className="w-5 h-5 text-zinc-400" />
             </Button>
           </Link>
 
@@ -972,6 +1017,16 @@ export default function DocumentEditPage({
           position: 'bottom-right',
         }}
         onSave={handleFeedbackSave}
+      />
+
+      {/* A/B Test Modal */}
+      <ABTestSettings
+        isOpen={showABTest}
+        onClose={() => setShowABTest(false)}
+        documentId={document.id}
+        documentHtml={documentHtml}
+        config={document.ab_test_config || null}
+        onSave={handleABTestSave}
       />
     </div>
   )
