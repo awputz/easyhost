@@ -75,6 +75,7 @@ export async function PUT(
       showPagelinkBadge,
       customBranding,
       seo,
+      leadCapture,
     } = body
 
     if (!isSupabaseConfigured()) {
@@ -114,6 +115,7 @@ export async function PUT(
     if (showPagelinkBadge !== undefined) updates.show_pagelink_badge = showPagelinkBadge
     if (customBranding !== undefined) updates.custom_branding = customBranding
     if (seo !== undefined) updates.seo = seo
+    if (leadCapture !== undefined) updates.lead_capture = leadCapture
 
     // Handle password
     if (removePassword) {

@@ -31,6 +31,20 @@ interface SEOData {
   keywords: string | null
 }
 
+interface LeadCaptureData {
+  enabled: boolean
+  requireEmail: boolean
+  requireName: boolean
+  requireCompany: boolean
+  requirePhone: boolean
+  customFields: { name: string; required: boolean }[]
+  headline: string
+  description: string
+  buttonText: string
+  showPreview: boolean
+  previewPercentage: number
+}
+
 interface DocumentData {
   id: string
   slug: string
@@ -45,6 +59,7 @@ interface DocumentData {
   expires_at: string | null
   allowed_emails: string[] | null
   seo: SEOData | null
+  lead_capture: LeadCaptureData | null
 }
 
 interface DocumentAccessResult {
@@ -71,7 +86,7 @@ async function getDocumentAccess(slug: string): Promise<DocumentAccessResult> {
 
   const { data: doc, error } = await supabase
     .from('pagelink_documents')
-    .select('id, slug, title, html, theme, custom_branding, is_public, show_pagelink_badge, view_count, password_hash, expires_at, allowed_emails, seo')
+    .select('id, slug, title, html, theme, custom_branding, is_public, show_pagelink_badge, view_count, password_hash, expires_at, allowed_emails, seo, lead_capture')
     .eq('slug', slug)
     .single()
 
@@ -130,6 +145,7 @@ function getDemoDocument(slug: string): DocumentData | null {
       expires_at: null,
       allowed_emails: null,
       seo: null,
+      lead_capture: null,
     }
   }
   return null
@@ -243,12 +259,14 @@ export default async function PublicDocumentPage({
   if (result.status === 'password_required' && result.document) {
     return (
       <DocumentViewer
+        documentId={result.document.id}
         slug={result.document.slug}
         title={result.document.title}
         html={null}
         hasPassword={true}
         showBadge={result.document.show_pagelink_badge}
         branding={result.document.custom_branding}
+        leadCapture={result.document.lead_capture}
       />
     )
   }
@@ -257,12 +275,14 @@ export default async function PublicDocumentPage({
   const doc = result.document!
   return (
     <DocumentViewer
+      documentId={doc.id}
       slug={doc.slug}
       title={doc.title}
       html={doc.html}
       hasPassword={false}
       showBadge={doc.show_pagelink_badge}
       branding={doc.custom_branding}
+      leadCapture={doc.lead_capture}
     />
   )
 }
