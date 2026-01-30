@@ -3,18 +3,6 @@
 import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import {
-  ArrowLeft,
-  Upload,
-  File,
-  Image,
-  FileText,
-  Film,
-  Code,
-  X,
-  Loader2,
-  CheckCircle,
-} from 'lucide-react'
 import { toast } from 'sonner'
 
 interface UploadedFile {
@@ -67,18 +55,18 @@ export default function UploadPage() {
     setFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const getIcon = (file: File) => {
-    if (file.type.startsWith('image/')) return Image
-    if (file.type.startsWith('video/')) return Film
-    if (file.type === 'text/html') return Code
-    if (file.type === 'application/pdf') return FileText
-    return File
-  }
-
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return bytes + ' B'
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+  }
+
+  const getFileType = (file: File) => {
+    if (file.type.startsWith('image/')) return 'IMG'
+    if (file.type.startsWith('video/')) return 'VID'
+    if (file.type === 'text/html') return 'HTML'
+    if (file.type === 'application/pdf') return 'PDF'
+    return 'FILE'
   }
 
   const handleUpload = async () => {
@@ -126,27 +114,26 @@ export default function UploadPage() {
     }
 
     setUploading(false)
-    toast.success('Files uploaded successfully!')
+    toast.success('Files uploaded')
   }
 
   const allDone = files.length > 0 && files.every((f) => f.status === 'done')
   const pendingCount = files.filter((f) => f.status === 'pending').length
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
-      <div className="max-w-3xl mx-auto py-12 px-6">
-        {/* Back button */}
+    <div className="min-h-screen bg-cream-50">
+      <div className="max-w-2xl mx-auto py-12 px-6">
+        {/* Back link */}
         <Link
           href="/new"
-          className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-8 transition-colors"
+          className="inline-block text-sm text-navy-400 hover:text-navy-600 mb-10 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back
+          &larr; Back
         </Link>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Upload files</h1>
-        <p className="text-gray-500 mb-8">
-          Images, PDFs, HTML, videos - we'll host anything
+        <h1 className="font-serif text-2xl font-semibold text-navy-900 mb-2">Upload files</h1>
+        <p className="text-navy-500 mb-8">
+          Images, PDFs, HTML, videos - we will host anything
         </p>
 
         {/* Dropzone */}
@@ -154,10 +141,10 @@ export default function UploadPage() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer ${
+          className={`border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer ${
             isDragging
-              ? 'border-blue-400 bg-blue-50'
-              : 'border-gray-200 hover:border-gray-300 bg-white'
+              ? 'border-navy-400 bg-navy-50'
+              : 'border-navy-200 hover:border-navy-300 bg-white'
           }`}
         >
           <input
@@ -168,93 +155,73 @@ export default function UploadPage() {
             id="file-input"
           />
           <label htmlFor="file-input" className="cursor-pointer">
-            <Upload
-              className={`w-12 h-12 mx-auto mb-4 ${
-                isDragging ? 'text-blue-500' : 'text-gray-400'
-              }`}
-            />
-            <p className="text-lg font-medium text-gray-900 mb-2">
+            <p className="font-medium text-navy-900 mb-1">
               {isDragging ? 'Drop files here' : 'Drag and drop files here'}
             </p>
-            <p className="text-gray-500 mb-4">or click to browse</p>
-            <p className="text-sm text-gray-400">Max 100MB per file</p>
+            <p className="text-navy-500 text-sm mb-4">or click to browse</p>
+            <p className="text-xs text-navy-400">Max 100MB per file</p>
           </label>
         </div>
 
         {/* File list */}
         {files.length > 0 && (
-          <div className="mt-6 space-y-3">
-            {files.map((uploadedFile, index) => {
-              const Icon = getIcon(uploadedFile.file)
-              return (
-                <div
-                  key={index}
-                  className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100"
-                >
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-gray-600" />
+          <div className="mt-6 space-y-2">
+            {files.map((uploadedFile, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-4 p-4 bg-white rounded-lg border border-navy-100"
+              >
+                <span className="font-mono text-xs text-navy-400 uppercase tracking-wider w-10">
+                  {getFileType(uploadedFile.file)}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-navy-900 truncate text-sm">
+                    {uploadedFile.file.name}
+                  </p>
+                  <div className="flex items-center gap-3 text-xs text-navy-400">
+                    <span>{formatSize(uploadedFile.file.size)}</span>
+                    {uploadedFile.status === 'done' && (
+                      <span className="text-green-600">Uploaded</span>
+                    )}
+                    {uploadedFile.status === 'uploading' && (
+                      <span className="text-navy-600">Uploading...</span>
+                    )}
+                    {uploadedFile.status === 'error' && (
+                      <span className="text-red-600">Failed</span>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">
-                      {uploadedFile.file.name}
-                    </p>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <span>{formatSize(uploadedFile.file.size)}</span>
-                      {uploadedFile.status === 'done' && (
-                        <span className="flex items-center gap-1 text-green-600">
-                          <CheckCircle className="w-3 h-3" />
-                          Uploaded
-                        </span>
-                      )}
-                      {uploadedFile.status === 'uploading' && (
-                        <span className="flex items-center gap-1 text-blue-600">
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          Uploading...
-                        </span>
-                      )}
-                      {uploadedFile.status === 'error' && (
-                        <span className="text-red-600">Failed</span>
-                      )}
-                    </div>
-                  </div>
-                  {uploadedFile.status !== 'uploading' && (
-                    <button
-                      onClick={() => removeFile(index)}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <X className="w-4 h-4 text-gray-400" />
-                    </button>
-                  )}
                 </div>
-              )
-            })}
+                {uploadedFile.status !== 'uploading' && (
+                  <button
+                    onClick={() => removeFile(index)}
+                    className="text-navy-400 hover:text-navy-600 text-sm transition-colors"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
 
             {!allDone && (
               <button
                 onClick={handleUpload}
                 disabled={uploading || pendingCount === 0}
-                className="w-full py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-navy-800 hover:bg-navy-700 disabled:bg-navy-200 disabled:cursor-not-allowed text-cream-50 rounded-lg font-medium transition-colors"
               >
-                {uploading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  `Upload ${pendingCount} file${pendingCount !== 1 ? 's' : ''}`
-                )}
+                {uploading
+                  ? 'Uploading...'
+                  : `Upload ${pendingCount} file${pendingCount !== 1 ? 's' : ''}`}
               </button>
             )}
 
             {allDone && (
               <div className="space-y-3">
-                <div className="p-4 bg-green-50 rounded-xl text-green-700 text-center">
-                  <CheckCircle className="w-6 h-6 mx-auto mb-2" />
-                  All files uploaded successfully!
+                <div className="p-4 bg-green-50 rounded-lg text-green-700 text-center text-sm">
+                  All files uploaded successfully
                 </div>
                 <button
                   onClick={() => router.push('/dashboard/files')}
-                  className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors"
+                  className="w-full py-3 bg-navy-800 hover:bg-navy-700 text-cream-50 rounded-lg font-medium transition-colors"
                 >
                   View in My Files
                 </button>

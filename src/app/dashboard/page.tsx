@@ -2,19 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import {
-  Search,
-  Copy,
-  ExternalLink,
-  MoreHorizontal,
-  Eye,
-  Clock,
-  FileText,
-  Plus,
-  Trash2,
-  Archive,
-  Settings,
-} from 'lucide-react'
 import { toast } from 'sonner'
 import {
   DropdownMenu,
@@ -63,7 +50,7 @@ export default function DashboardPage() {
   const copyLink = (slug: string) => {
     const url = `${window.location.origin}/p/${slug}`
     navigator.clipboard.writeText(url)
-    toast.success('Link copied to clipboard!')
+    toast.success('Link copied')
   }
 
   const formatDate = (dateString: string) => {
@@ -85,29 +72,27 @@ export default function DashboardPage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
-      <div className="max-w-4xl mx-auto py-8 px-6">
+    <div className="min-h-screen bg-cream-50">
+      <div className="max-w-3xl mx-auto py-10 px-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">My Pages</h1>
+          <h1 className="font-serif text-2xl font-semibold text-navy-900">Pages</h1>
           <Link
             href="/new"
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors"
+            className="px-4 py-2 bg-navy-800 hover:bg-navy-700 text-cream-50 rounded-lg text-sm font-medium transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            New page
+            + New
           </Link>
         </div>
 
         {/* Search */}
-        <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <div className="mb-6">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search pages..."
-            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2.5 bg-white border border-navy-100 rounded-lg text-navy-800 placeholder-navy-300 focus:outline-none focus:ring-2 focus:ring-navy-200 focus:border-navy-200 transition-all"
           />
         </div>
 
@@ -117,13 +102,10 @@ export default function DashboardPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 animate-pulse"
+                className="p-4 bg-white rounded-lg border border-navy-100 animate-pulse"
               >
-                <div className="w-12 h-12 bg-gray-100 rounded-xl" />
-                <div className="flex-1">
-                  <div className="h-5 bg-gray-100 rounded w-1/3 mb-2" />
-                  <div className="h-4 bg-gray-100 rounded w-1/4" />
-                </div>
+                <div className="h-5 bg-navy-100 rounded w-1/3 mb-2" />
+                <div className="h-4 bg-navy-50 rounded w-1/4" />
               </div>
             ))}
           </div>
@@ -131,87 +113,66 @@ export default function DashboardPage() {
 
         {/* Pages List */}
         {!loading && filteredDocuments.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {filteredDocuments.map((doc) => (
               <div
                 key={doc.id}
-                className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all group"
+                className="flex items-center justify-between p-4 bg-white rounded-lg border border-navy-100 hover:border-navy-200 hover:shadow-sm transition-all group"
               >
-                {/* Icon */}
-                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-blue-500" />
-                </div>
-
                 {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <Link href={`/d/${doc.slug}`} className="block">
-                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
-                      {doc.title}
-                    </h3>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Eye className="w-4 h-4" />
-                        {doc.view_count} views
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {formatDate(doc.updated_at)}
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          doc.is_public
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        {doc.is_public ? 'Public' : 'Private'}
-                      </span>
-                    </div>
-                  </Link>
-                </div>
+                <Link href={`/d/${doc.slug}`} className="flex-1 min-w-0">
+                  <h3 className="font-medium text-navy-900 group-hover:text-navy-700 transition-colors truncate">
+                    {doc.title}
+                  </h3>
+                  <div className="flex items-center gap-4 mt-1 text-sm text-navy-400">
+                    <span className="font-mono text-xs">{doc.view_count} views</span>
+                    <span>{formatDate(doc.updated_at)}</span>
+                    <span
+                      className={`text-xs ${
+                        doc.is_public ? 'text-green-600' : 'text-navy-400'
+                      }`}
+                    >
+                      {doc.is_public ? 'Public' : 'Private'}
+                    </span>
+                  </div>
+                </Link>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => copyLink(doc.slug)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Copy link"
+                    className="px-3 py-1.5 text-xs text-navy-600 hover:text-navy-900 hover:bg-navy-50 rounded transition-colors"
                   >
-                    <Copy className="w-4 h-4 text-gray-500" />
+                    Copy link
                   </button>
                   <a
                     href={`/p/${doc.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Open page"
+                    className="px-3 py-1.5 text-xs text-navy-600 hover:text-navy-900 hover:bg-navy-50 rounded transition-colors"
                   >
-                    <ExternalLink className="w-4 h-4 text-gray-500" />
+                    Open
                   </a>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                        <MoreHorizontal className="w-4 h-4 text-gray-500" />
+                      <button className="px-2 py-1.5 text-navy-400 hover:text-navy-600 hover:bg-navy-50 rounded transition-colors">
+                        &middot;&middot;&middot;
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuContent align="end" className="w-40">
                       <DropdownMenuItem asChild>
-                        <Link href={`/d/${doc.slug}`} className="cursor-pointer">
-                          <Settings className="w-4 h-4 mr-2" />
+                        <Link href={`/d/${doc.slug}`} className="cursor-pointer text-sm">
                           Edit settings
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => copyLink(doc.slug)}>
-                        <Copy className="w-4 h-4 mr-2" />
+                      <DropdownMenuItem onClick={() => copyLink(doc.slug)} className="text-sm">
                         Copy link
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem>
-                        <Archive className="w-4 h-4 mr-2" />
+                      <DropdownMenuItem className="text-sm">
                         Archive
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
-                        <Trash2 className="w-4 h-4 mr-2" />
+                      <DropdownMenuItem className="text-red-600 text-sm">
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -225,20 +186,16 @@ export default function DashboardPage() {
         {/* Empty state */}
         {!loading && documents.length === 0 && (
           <div className="text-center py-16">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="font-serif text-xl text-navy-900 mb-2">
               No pages yet
             </h3>
-            <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+            <p className="text-navy-500 mb-6 max-w-sm mx-auto">
               Create your first page to start sharing content with a simple link.
             </p>
             <Link
               href="/new"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors"
+              className="inline-block px-5 py-2.5 bg-navy-800 hover:bg-navy-700 text-cream-50 rounded-lg text-sm font-medium transition-colors"
             >
-              <Plus className="w-4 h-4" />
               Create your first page
             </Link>
           </div>
@@ -247,12 +204,11 @@ export default function DashboardPage() {
         {/* No results */}
         {!loading && documents.length > 0 && filteredDocuments.length === 0 && (
           <div className="text-center py-16">
-            <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No results found
+            <h3 className="font-serif text-xl text-navy-900 mb-2">
+              No results
             </h3>
-            <p className="text-gray-500">
-              No pages match "{search}"
+            <p className="text-navy-500">
+              No pages match &quot;{search}&quot;
             </p>
           </div>
         )}
