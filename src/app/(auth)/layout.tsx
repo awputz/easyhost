@@ -6,16 +6,21 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-cream-50">
       {/* Header */}
-      <header className="border-b border-border">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
-            </div>
-            <span className="font-semibold text-lg">Pagelink</span>
+      <header className="border-b border-navy-100 bg-white">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="font-serif text-xl font-semibold text-navy-900 tracking-tight">
+            Pagelink
           </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/pricing"
+              className="text-navy-600 hover:text-navy-900 transition-colors text-sm"
+            >
+              Pricing
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -25,9 +30,9 @@ export default function AuthLayout({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border py-4">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} Pagelink. All rights reserved.
+      <footer className="border-t border-navy-100 py-4">
+        <div className="max-w-5xl mx-auto px-6 text-center text-sm text-navy-500">
+          &copy; 2025 Pagelink. All rights reserved.
         </div>
       </footer>
     </div>

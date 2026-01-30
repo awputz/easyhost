@@ -203,18 +203,23 @@ export default function HomePage() {
           <h2 className="font-serif text-3xl font-semibold text-navy-900 mb-4">
             Simple, transparent pricing
           </h2>
-          <p className="text-navy-500 mb-12">Start free, upgrade when you need more</p>
+          <p className="text-navy-500 mb-12">
+            Start free, upgrade when you need more.{' '}
+            <Link href="/pricing" className="text-navy-700 hover:text-navy-900 underline">
+              View all plans
+            </Link>
+          </p>
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Free */}
             <div className="p-8 bg-white rounded-xl border border-navy-100 text-left">
               <h3 className="font-medium text-navy-900 mb-1">Free</h3>
-              <p className="text-navy-500 text-sm mb-4">Perfect for getting started</p>
+              <p className="text-navy-500 text-sm mb-4">For individuals getting started</p>
               <p className="text-3xl font-serif font-semibold text-navy-900 mb-6">
                 $0<span className="text-base text-navy-400 font-normal">/mo</span>
               </p>
               <ul className="space-y-3 mb-8 text-sm text-navy-600">
-                {['3 pages', '10MB per file', 'Basic analytics', 'Pagelink branding'].map(
+                {['100MB storage', '10MB per file', 'Basic analytics', 'Unlimited links'].map(
                   (item) => (
                     <li key={item} className="flex items-center gap-2">
                       <span className="text-green-600">&#10003;</span>
@@ -227,7 +232,7 @@ export default function HomePage() {
                 href="/signup"
                 className="block w-full py-3 bg-navy-50 hover:bg-navy-100 text-navy-900 rounded-lg font-medium text-center transition-colors text-sm"
               >
-                Get started
+                Get started free
               </Link>
             </div>
 
@@ -237,17 +242,18 @@ export default function HomePage() {
                 Popular
               </div>
               <h3 className="font-medium text-cream-50 mb-1">Pro</h3>
-              <p className="text-navy-300 text-sm mb-4">For professionals and teams</p>
+              <p className="text-navy-300 text-sm mb-4">For professionals and creators</p>
               <p className="text-3xl font-serif font-semibold text-cream-50 mb-6">
-                $12<span className="text-base text-navy-300 font-normal">/mo</span>
+                $9<span className="text-base text-navy-300 font-normal">/mo</span>
               </p>
+              <p className="text-xs text-navy-400 -mt-4 mb-6">Billed annually</p>
               <ul className="space-y-3 mb-8 text-sm text-cream-100">
                 {[
-                  'Unlimited pages',
+                  '10GB storage',
                   '100MB per file',
                   'Advanced analytics',
                   'Custom domains',
-                  'Remove branding',
+                  'Password protection',
                   'Priority support',
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-2">
