@@ -8,6 +8,68 @@ import type { LeadCaptureConfig } from './lead-capture-settings'
 import type { FeedbackConfig } from './feedback-settings'
 import type { ABTestConfig, ABVariant } from './ab-test-settings'
 
+// Security: Sanitization utilities for branding config
+function sanitizeUrlClient(input: string | null | undefined): string {
+  if (!input) return ''
+  const trimmed = input.trim().slice(0, 2000)
+  try {
+    const url = new URL(trimmed)
+    // Only allow http and https protocols
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return ''
+    }
+    return url.href
+  } catch {
+    return ''
+  }
+}
+
+function sanitizeColorClient(input: string | null | undefined): string {
+  if (!input) return ''
+  const color = input.trim()
+  // Allow 3 or 6 character hex codes
+  if (/^#[0-9A-Fa-f]{3}$/.test(color) || /^#[0-9A-Fa-f]{6}$/.test(color)) {
+    return color
+  }
+  return ''
+}
+
+function sanitizeCssClient(input: string | null | undefined): string {
+  if (!input) return ''
+  return input
+    .replace(/expression\s*\(/gi, '')
+    .replace(/javascript\s*:/gi, '')
+    .replace(/behavior\s*:/gi, '')
+    .replace(/-moz-binding\s*:/gi, '')
+    .replace(/@import\s+/gi, '/* blocked */ ')
+    .replace(/url\s*\(\s*(['"]?)\s*javascript:/gi, 'url($1blocked:')
+    .replace(/url\s*\(\s*(['"]?)\s*data:/gi, 'url($1blocked:')
+    .slice(0, 50000)
+}
+
+function escapeHtmlClient(input: string | null | undefined): string {
+  if (!input) return ''
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  }
+  return input.replace(/[&<>"']/g, (char) => map[char])
+}
+
+function escapeJsString(input: string): string {
+  return input
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/</g, '\\x3c')
+    .replace(/>/g, '\\x3e')
+}
+
 export interface BrandingConfig {
   logoUrl?: string | null
   primaryColor?: string
@@ -257,8 +319,13 @@ export function DocumentViewer({
 function getBrandingStyles(branding: BrandingConfig): string {
   const fontImport = branding.fontFamily ? FONT_IMPORTS[branding.fontFamily] || '' : ''
   const fontFamily = branding.fontFamily ? FONT_FAMILIES[branding.fontFamily] || 'inherit' : 'inherit'
-  const primary = branding.primaryColor || '#3B82F6'
-  const accent = branding.accentColor || '#60A5FA'
+  // Sanitize colors to prevent CSS injection
+  const primary = sanitizeColorClient(branding.primaryColor) || '#3B82F6'
+  const accent = sanitizeColorClient(branding.accentColor) || '#60A5FA'
+  // Sanitize logo URL to prevent XSS
+  const safeLogoUrl = sanitizeUrlClient(branding.logoUrl)
+  // Sanitize custom CSS to prevent injection attacks
+  const safeCustomCss = sanitizeCssClient(branding.customCss)
 
   return `
 <style>
@@ -285,7 +352,7 @@ function getBrandingStyles(branding: BrandingConfig): string {
   }
 
   /* Brand logo header */
-  ${branding.logoUrl ? `
+  ${safeLogoUrl ? `
   .pagelink-brand-header {
     position: fixed;
     top: 20px;
@@ -307,19 +374,22 @@ function getBrandingStyles(branding: BrandingConfig): string {
   ` : ''}
 
   /* Custom CSS */
-  ${branding.customCss || ''}
+  ${safeCustomCss}
 </style>
-${branding.logoUrl ? `
+${safeLogoUrl ? `
 <div class="pagelink-brand-header">
-  <img src="${branding.logoUrl}" alt="Logo" />
+  <img src="${safeLogoUrl}" alt="Logo" />
 </div>
 ` : ''}
 `
 }
 
 function getCustomFooter(branding: BrandingConfig): string {
-  const primary = branding.primaryColor || '#3B82F6'
+  const primary = sanitizeColorClient(branding.primaryColor) || '#3B82F6'
   const fontFamily = branding.fontFamily ? FONT_FAMILIES[branding.fontFamily] || 'inherit' : 'inherit'
+  // Sanitize footer link URL and escape footer text
+  const safeFooterLink = sanitizeUrlClient(branding.footerLink)
+  const safeFooterText = escapeHtmlClient(branding.footerText)
 
   return `
 <style>
@@ -349,9 +419,9 @@ function getCustomFooter(branding: BrandingConfig): string {
   }
 </style>
 <div class="pagelink-custom-footer">
-  ${branding.footerLink
-    ? `<a href="${branding.footerLink}" target="_blank" rel="noopener noreferrer">${branding.footerText}</a>`
-    : branding.footerText
+  ${safeFooterLink
+    ? `<a href="${safeFooterLink}" target="_blank" rel="noopener noreferrer">${safeFooterText}</a>`
+    : safeFooterText
   }
 </div>
 `
@@ -403,16 +473,21 @@ function getPagelinkBadge(): string {
 }
 
 function getABConversionScript(documentId: string, variantId: string, goalSelector: string): string {
+  // Properly escape all values to prevent XSS
+  const safeDocId = escapeJsString(documentId)
+  const safeVarId = escapeJsString(variantId)
+  const safeSelector = escapeJsString(goalSelector)
+
   return `
 <script>
 (function() {
   // A/B Test Conversion Tracking
-  var converted = sessionStorage.getItem('pagelink_ab_converted_${documentId}');
+  var converted = sessionStorage.getItem('pagelink_ab_converted_${safeDocId}');
   if (converted) return;
 
-  var selector = '${goalSelector.replace(/'/g, "\\'")}';
-  var docId = '${documentId}';
-  var varId = '${variantId}';
+  var selector = '${safeSelector}';
+  var docId = '${safeDocId}';
+  var varId = '${safeVarId}';
 
   function trackConversion() {
     if (sessionStorage.getItem('pagelink_ab_converted_' + docId)) return;
@@ -432,8 +507,13 @@ function getABConversionScript(documentId: string, variantId: string, goalSelect
   document.addEventListener('click', function(e) {
     var target = e.target;
     while (target && target !== document) {
-      if (target.matches && target.matches(selector)) {
-        trackConversion();
+      try {
+        if (target.matches && target.matches(selector)) {
+          trackConversion();
+          return;
+        }
+      } catch(err) {
+        // Invalid selector - silently fail
         return;
       }
       target = target.parentElement;

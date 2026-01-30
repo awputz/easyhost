@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server'
+import { sanitizeWebhookUrl } from '@/lib/sanitize'
 import crypto from 'crypto'
 
 interface WebhookEndpoint {
@@ -159,6 +160,14 @@ export async function POST(
 
     for (const endpoint of endpoints) {
       try {
+        // Validate webhook URL to prevent SSRF attacks
+        const urlValidation = sanitizeWebhookUrl(endpoint.url)
+        if (!urlValidation.valid) {
+          results.push({ endpointId: endpoint.id, success: false, error: 'Invalid URL' })
+          await logWebhookDelivery(supabase, id, endpoint.id, event, false, 0)
+          continue
+        }
+
         const payload = {
           event,
           documentId: id,
@@ -168,7 +177,7 @@ export async function POST(
 
         const signature = generateSignature(JSON.stringify(payload), endpoint.secret)
 
-        const response = await fetch(endpoint.url, {
+        const response = await fetch(urlValidation.url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

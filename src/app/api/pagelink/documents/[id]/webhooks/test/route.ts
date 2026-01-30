@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server'
+import { sanitizeWebhookUrl } from '@/lib/sanitize'
 import crypto from 'crypto'
 
 // POST - Test a webhook endpoint
@@ -15,6 +16,15 @@ export async function POST(
 
     if (!url) {
       return NextResponse.json({ error: 'URL required' }, { status: 400 })
+    }
+
+    // Validate webhook URL to prevent SSRF attacks
+    const urlValidation = sanitizeWebhookUrl(url)
+    if (!urlValidation.valid) {
+      return NextResponse.json({
+        success: false,
+        message: urlValidation.error || 'Invalid URL',
+      }, { status: 400 })
     }
 
     if (!isSupabaseConfigured()) {
@@ -64,7 +74,7 @@ export async function POST(
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
-      const response = await fetch(url, {
+      const response = await fetch(urlValidation.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
