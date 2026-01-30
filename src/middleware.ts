@@ -9,10 +9,44 @@ const securityHeaders = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 }
 
+// Main domains that are NOT custom domains
+const MAIN_DOMAINS = [
+  'localhost',
+  'pagelink.com',
+  'www.pagelink.com',
+  'pagelink.vercel.app',
+]
+
+// Check if the host is a custom domain
+function isCustomDomain(host: string): boolean {
+  const hostname = host.split(':')[0] // Remove port if present
+  return !MAIN_DOMAINS.some(domain =>
+    hostname === domain || hostname.endsWith(`.${domain}`)
+  )
+}
+
 export async function middleware(request: NextRequest) {
-  // TODO: Enable Supabase session management once environment is configured
-  // import { updateSession } from '@/lib/supabase/middleware'
-  // return await updateSession(request)
+  const host = request.headers.get('host') || ''
+  const pathname = request.nextUrl.pathname
+
+  // Handle custom domain routing
+  if (isCustomDomain(host) && !pathname.startsWith('/api/') && !pathname.startsWith('/_next/')) {
+    // Rewrite custom domain requests to the custom domain handler
+    // The handler will look up which document/workspace this domain maps to
+    const url = request.nextUrl.clone()
+    url.pathname = `/api/custom-domain${pathname === '/' ? '' : pathname}`
+    url.searchParams.set('_host', host)
+
+    // Rewrite to the custom domain API which will serve the content
+    const response = NextResponse.rewrite(url)
+
+    // Add security headers
+    Object.entries(securityHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value)
+    })
+
+    return response
+  }
 
   // Create response and add security headers
   const response = NextResponse.next()
@@ -23,7 +57,7 @@ export async function middleware(request: NextRequest) {
   })
 
   // Add CORS headers for API routes
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  if (pathname.startsWith('/api/')) {
     response.headers.set('Access-Control-Allow-Origin', '*')
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
