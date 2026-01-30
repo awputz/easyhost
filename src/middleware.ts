@@ -15,6 +15,8 @@ const MAIN_DOMAINS = [
   'pagelink.com',
   'www.pagelink.com',
   'pagelink.vercel.app',
+  'pagelinkit.com',
+  'www.pagelinkit.com',
 ]
 
 // Check if the host is a custom domain
