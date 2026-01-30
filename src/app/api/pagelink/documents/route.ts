@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server'
+import { authenticateRequest, apiError } from '@/lib/api-auth'
+import { createDocumentSchema, validateBody, formatZodErrors } from '@/lib/validations'
+import { rateLimiters, getRateLimitHeaders } from '@/lib/rate-limit'
 
 // GET - List all documents for the current user
 export async function GET(request: NextRequest) {
@@ -10,10 +13,22 @@ export async function GET(request: NextRequest) {
     const sortBy = url.searchParams.get('sortBy') || 'updated_at'
     const sortOrder = url.searchParams.get('sortOrder') === 'asc' ? true : false
 
+    // Apply rate limiting
+    const identifier = request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown'
+    const rateLimitResult = rateLimiters.api(identifier)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      )
+    }
+
     if (!isSupabaseConfigured()) {
       let docs = getDemoDocuments()
       if (search) {
-        docs = docs.filter(d => d.title.toLowerCase().includes(search.toLowerCase()))
+        // Sanitize search input
+        const sanitizedSearch = search.replace(/[<>]/g, '').substring(0, 100)
+        docs = docs.filter(d => d.title.toLowerCase().includes(sanitizedSearch.toLowerCase()))
       }
       return NextResponse.json(docs)
     }
@@ -25,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Authentication required')
     }
 
     let query = supabase
@@ -40,12 +55,14 @@ export async function GET(request: NextRequest) {
       query = query.is('archived_at', null)
     }
 
-    // Search filter
+    // Sanitize and apply search filter
     if (search) {
-      query = query.ilike('title', `%${search}%`)
+      // Sanitize search input to prevent SQL injection via ilike
+      const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&').substring(0, 100)
+      query = query.ilike('title', `%${sanitizedSearch}%`)
     }
 
-    // Sorting
+    // Sorting - strict whitelist
     const validSortFields = ['updated_at', 'created_at', 'title', 'view_count']
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'updated_at'
     query = query.order(sortField, { ascending: sortOrder })
@@ -54,35 +71,55 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching documents:', error)
-      return NextResponse.json({ error: 'Failed to fetch documents' }, { status: 500 })
+      return apiError('INTERNAL_ERROR', 'Failed to fetch documents')
     }
 
     return NextResponse.json(documents || [])
   } catch (error) {
     console.error('Documents GET error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'An unexpected error occurred')
   }
 }
 
 // POST - Create a new document
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const {
-      title,
-      html,
-      documentType,
-      theme = 'midnight',
-      isPublic = true,
-      slug: customSlug,
-    } = body
-
-    if (!title || !html) {
+    // Rate limit document creation
+    const identifier = request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown'
+    const rateLimitResult = rateLimiters.documentCreate(identifier)
+    if (!rateLimitResult.success) {
       return NextResponse.json(
-        { error: 'Title and HTML are required' },
-        { status: 400 }
+        { error: 'Rate limit exceeded', retryAfter: Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000) },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
       )
     }
+
+    // Parse and validate request body
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return apiError('BAD_REQUEST', 'Invalid JSON body')
+    }
+
+    // Transform body keys to match schema
+    const transformedBody = {
+      title: (body as Record<string, unknown>).title,
+      html: (body as Record<string, unknown>).html,
+      slug: (body as Record<string, unknown>).slug,
+      document_type: (body as Record<string, unknown>).documentType,
+      theme: (body as Record<string, unknown>).theme,
+      is_public: (body as Record<string, unknown>).isPublic,
+    }
+
+    const validation = validateBody(createDocumentSchema, transformedBody)
+    if (!validation.success) {
+      return apiError('VALIDATION_ERROR', 'Invalid request data', {
+        errors: formatZodErrors(validation.errors),
+      })
+    }
+
+    const { title, html, slug: customSlug, document_type: documentType, theme, is_public: isPublic } = validation.data
 
     if (!isSupabaseConfigured()) {
       // Demo mode
@@ -103,12 +140,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
     if (!supabase) {
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
+      return apiError('INTERNAL_ERROR', 'Database connection failed')
     }
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('UNAUTHORIZED', 'Authentication required')
     }
 
     // Get user's workspace
@@ -120,6 +157,9 @@ export async function POST(request: NextRequest) {
 
     // Generate or validate slug
     let slug = customSlug || generateSlug()
+
+    // Sanitize slug - only allow alphanumeric and hyphens
+    slug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').substring(0, 100)
 
     // Check if slug is unique
     const { data: existing } = await supabase
@@ -151,7 +191,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating document:', error)
-      return NextResponse.json({ error: 'Failed to create document' }, { status: 500 })
+      return apiError('INTERNAL_ERROR', 'Failed to create document')
     }
 
     // Create initial version
@@ -166,7 +206,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(document)
   } catch (error) {
     console.error('Documents POST error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'An unexpected error occurred')
   }
 }
 

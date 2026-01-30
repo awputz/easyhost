@@ -1,325 +1,262 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Upload, FolderPlus, Link2, LayoutGrid, List, Search } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { UploadModal } from '@/components/upload/upload-modal'
-import { AssetGrid } from '@/components/assets/asset-grid'
-import { AssetList } from '@/components/assets/asset-list'
-import { AssetPreview } from '@/components/assets/asset-preview'
-import { BulkActionsBar } from '@/components/assets/bulk-actions-bar'
-import { FolderBreadcrumb } from '@/components/folders/folder-breadcrumb'
-import { CreateFolderModal } from '@/components/folders/create-folder-modal'
-import { CreateLinkModal } from '@/components/links/create-link-modal'
-import { EmbedCodeModal } from '@/components/assets/embed-code-modal'
-import { Skeleton } from '@/components/ui/skeleton'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import {
+  Search,
+  Copy,
+  ExternalLink,
+  MoreHorizontal,
+  Eye,
+  Clock,
+  FileText,
+  Plus,
+  Trash2,
+  Archive,
+  Settings,
+} from 'lucide-react'
 import { toast } from 'sonner'
-import type { Asset } from '@/types'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
-interface Folder {
+interface Document {
   id: string
-  name: string
-  path: string
-  parent_id: string | null
+  slug: string
+  title: string
+  document_type: string
+  theme: string
+  is_public: boolean
+  view_count: number
+  created_at: string
+  updated_at: string
+  archived_at: string | null
 }
 
 export default function DashboardPage() {
-  const [assets, setAssets] = useState<Asset[]>([])
-  const [folders, setFolders] = useState<Folder[]>([])
+  const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
-  const [uploadOpen, setUploadOpen] = useState(false)
-  const [createFolderOpen, setCreateFolderOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [previewAsset, setPreviewAsset] = useState<Asset | null>(null)
-  const [createLinkAsset, setCreateLinkAsset] = useState<Asset | null>(null)
-  const [embedAsset, setEmbedAsset] = useState<Asset | null>(null)
+  const [search, setSearch] = useState('')
 
-  const fetchAssets = useCallback(async () => {
+  useEffect(() => {
+    fetchDocuments()
+  }, [])
+
+  const fetchDocuments = async () => {
     try {
-      const params = new URLSearchParams()
-      if (currentFolderId) {
-        params.set('folder_id', currentFolderId)
-      }
-      if (searchQuery) {
-        params.set('search', searchQuery)
-      }
-      const response = await fetch(`/api/assets?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setAssets(data.assets || [])
+      const res = await fetch('/api/pagelink/documents')
+      if (res.ok) {
+        const data = await res.json()
+        setDocuments(Array.isArray(data) ? data : [])
       }
     } catch (error) {
-      console.error('Failed to fetch assets:', error)
+      console.error('Failed to fetch documents:', error)
     } finally {
       setLoading(false)
     }
-  }, [currentFolderId, searchQuery])
-
-  const fetchFolders = useCallback(async () => {
-    try {
-      const response = await fetch('/api/folders')
-      if (response.ok) {
-        const data = await response.json()
-        setFolders(data.folders || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch folders:', error)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchAssets()
-  }, [fetchAssets])
-
-  useEffect(() => {
-    fetchFolders()
-  }, [fetchFolders])
-
-  const handleUploadComplete = () => {
-    fetchAssets()
   }
 
-  const handleFolderCreated = () => {
-    fetchFolders()
+  const copyLink = (slug: string) => {
+    const url = `${window.location.origin}/p/${slug}`
+    navigator.clipboard.writeText(url)
+    toast.success('Link copied to clipboard!')
   }
 
-  // Build breadcrumb path
-  const buildBreadcrumbs = () => {
-    if (!currentFolderId) return []
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
 
-    const breadcrumbs: { id: string | null; name: string }[] = []
-    let folder = folders.find((f) => f.id === currentFolderId)
-
-    while (folder) {
-      breadcrumbs.unshift({ id: folder.id, name: folder.name })
-      folder = folder.parent_id ? folders.find((f) => f.id === folder!.parent_id) : undefined
-    }
-
-    return breadcrumbs
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
   }
 
-  const handleSelectAsset = (id: string, selected: boolean) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (selected) {
-        next.add(id)
-      } else {
-        next.delete(id)
-      }
-      return next
-    })
-  }
-
-  const handleSelectAll = (selected: boolean) => {
-    if (selected) {
-      setSelectedIds(new Set(assets.map((a) => a.id)))
-    } else {
-      setSelectedIds(new Set())
-    }
-  }
-
-  const handleBulkDelete = async () => {
-    toast.info(`Deleting ${selectedIds.size} assets...`)
-    setSelectedIds(new Set())
-    fetchAssets()
-  }
-
-  const handleBulkMove = () => {
-    toast.info('Move functionality coming soon')
-  }
-
-  const handleBulkTag = () => {
-    toast.info('Tag functionality coming soon')
-  }
-
-  const handleBulkDownload = () => {
-    toast.info('Download functionality coming soon')
-  }
-
-  const handleDeleteAsset = async (asset: Asset) => {
-    toast.success(`Deleted ${asset.filename}`)
-    fetchAssets()
-  }
-
-  const filteredAssets = assets.filter((asset) =>
-    asset.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    asset.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredDocuments = documents.filter((doc) =>
+    doc.title.toLowerCase().includes(search.toLowerCase())
   )
 
-  const hasAssets = filteredAssets.length > 0
-  const breadcrumbs = buildBreadcrumbs()
-
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Assets</h1>
-          <FolderBreadcrumb
-            items={breadcrumbs}
-            onNavigate={setCurrentFolderId}
+    <div className="min-h-screen bg-[#FAFAF9]">
+      <div className="max-w-4xl mx-auto py-8 px-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">My Pages</h1>
+          <Link
+            href="/new"
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New page
+          </Link>
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-6">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search pages..."
+            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setCreateFolderOpen(true)}>
-            <FolderPlus className="h-4 w-4 mr-2" />
-            New folder
-          </Button>
-          <Button size="sm" onClick={() => setUploadOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Upload
-          </Button>
-        </div>
+
+        {/* Loading state */}
+        {loading && (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 animate-pulse"
+              >
+                <div className="w-12 h-12 bg-gray-100 rounded-xl" />
+                <div className="flex-1">
+                  <div className="h-5 bg-gray-100 rounded w-1/3 mb-2" />
+                  <div className="h-4 bg-gray-100 rounded w-1/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Pages List */}
+        {!loading && filteredDocuments.length > 0 && (
+          <div className="space-y-3">
+            {filteredDocuments.map((doc) => (
+              <div
+                key={doc.id}
+                className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all group"
+              >
+                {/* Icon */}
+                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-blue-500" />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <Link href={`/d/${doc.slug}`} className="block">
+                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                      {doc.title}
+                    </h3>
+                    <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Eye className="w-4 h-4" />
+                        {doc.view_count} views
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {formatDate(doc.updated_at)}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          doc.is_public
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {doc.is_public ? 'Public' : 'Private'}
+                      </span>
+                    </div>
+                  </Link>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => copyLink(doc.slug)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Copy link"
+                  >
+                    <Copy className="w-4 h-4 text-gray-500" />
+                  </button>
+                  <a
+                    href={`/p/${doc.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Open page"
+                  >
+                    <ExternalLink className="w-4 h-4 text-gray-500" />
+                  </a>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <MoreHorizontal className="w-4 h-4 text-gray-500" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem asChild>
+                        <Link href={`/d/${doc.slug}`} className="cursor-pointer">
+                          <Settings className="w-4 h-4 mr-2" />
+                          Edit settings
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => copyLink(doc.slug)}>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy link
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>
+                        <Archive className="w-4 h-4 mr-2" />
+                        Archive
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-red-600">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && documents.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No pages yet
+            </h3>
+            <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+              Create your first page to start sharing content with a simple link.
+            </p>
+            <Link
+              href="/new"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create your first page
+            </Link>
+          </div>
+        )}
+
+        {/* No results */}
+        {!loading && documents.length > 0 && filteredDocuments.length === 0 && (
+          <div className="text-center py-16">
+            <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No results found
+            </h3>
+            <p className="text-gray-500">
+              No pages match "{search}"
+            </p>
+          </div>
+        )}
       </div>
-
-      {/* Toolbar */}
-      {(assets.length > 0 || searchQuery) && (
-        <div className="flex items-center gap-4">
-          {/* Search */}
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search assets..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          {/* View toggle */}
-          <div className="flex items-center border rounded-md">
-            <Button
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="rounded-r-none"
-              onClick={() => setViewMode('grid')}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="rounded-l-none"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Content */}
-      {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="space-y-2">
-              <Skeleton className="aspect-square rounded-lg" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-3 w-1/2" />
-            </div>
-          ))}
-        </div>
-      ) : hasAssets ? (
-        viewMode === 'grid' ? (
-          <AssetGrid assets={filteredAssets} onAssetsChange={fetchAssets} />
-        ) : (
-          <AssetList
-            assets={filteredAssets}
-            selectedIds={selectedIds}
-            onSelect={handleSelectAsset}
-            onSelectAll={handleSelectAll}
-            onPreview={setPreviewAsset}
-            onDelete={handleDeleteAsset}
-            onCreateLink={setCreateLinkAsset}
-            onEmbed={setEmbedAsset}
-          />
-        )
-      ) : searchQuery ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <Search className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No results found</h3>
-            <p className="text-muted-foreground">
-              No assets match &quot;{searchQuery}&quot;
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              <Upload className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No assets yet</h3>
-            <p className="text-muted-foreground mb-6 max-w-md">
-              Get started by uploading your first file. Drag and drop files here, or click the button below.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={() => setUploadOpen(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload files
-              </Button>
-              <Button variant="outline">
-                <Link2 className="h-4 w-4 mr-2" />
-                Import from URL
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-6">
-              Supports images, videos, documents, and more. Max 10MB per file on free plan.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Bulk actions bar */}
-      <BulkActionsBar
-        selectedCount={selectedIds.size}
-        onClearSelection={() => setSelectedIds(new Set())}
-        onDelete={handleBulkDelete}
-        onMove={handleBulkMove}
-        onTag={handleBulkTag}
-        onDownload={handleBulkDownload}
-      />
-
-      {/* Modals */}
-      <UploadModal
-        open={uploadOpen}
-        onOpenChange={setUploadOpen}
-        onUploadComplete={handleUploadComplete}
-      />
-
-      <CreateFolderModal
-        open={createFolderOpen}
-        onOpenChange={setCreateFolderOpen}
-        parentId={currentFolderId}
-        onFolderCreated={handleFolderCreated}
-      />
-
-      <AssetPreview
-        asset={previewAsset}
-        open={!!previewAsset}
-        onOpenChange={(open) => !open && setPreviewAsset(null)}
-        assets={filteredAssets}
-        onNavigate={setPreviewAsset}
-      />
-
-      <CreateLinkModal
-        open={!!createLinkAsset}
-        onOpenChange={(open) => !open && setCreateLinkAsset(null)}
-        asset={createLinkAsset}
-      />
-
-      <EmbedCodeModal
-        open={!!embedAsset}
-        onOpenChange={(open) => !open && setEmbedAsset(null)}
-        asset={embedAsset}
-      />
     </div>
   )
 }

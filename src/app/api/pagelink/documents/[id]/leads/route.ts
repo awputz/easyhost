@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { apiError } from '@/lib/api-auth'
+import { submitLeadSchema, validateBody, formatZodErrors, paginationSchema } from '@/lib/validations'
+import { rateLimiters, getRateLimitHeaders } from '@/lib/rate-limit'
 import crypto from 'crypto'
 
 // Admin client for public lead submissions
@@ -113,18 +116,32 @@ export async function POST(
   const { id } = await params
 
   try {
-    const body = await request.json()
-    const { email, name, company, phone, customFields } = body
-
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    // Rate limit lead submissions to prevent abuse
+    const identifier = `lead:${id}:${request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown'}`
+    const rateLimitResult = rateLimiters.auth(identifier) // 5 per minute
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many submissions. Please try again later.' },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      )
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
+    // Parse and validate request body
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return apiError('BAD_REQUEST', 'Invalid JSON body')
     }
+
+    const validation = validateBody(submitLeadSchema, body)
+    if (!validation.success) {
+      return apiError('VALIDATION_ERROR', 'Invalid lead data', {
+        errors: formatZodErrors(validation.errors),
+      })
+    }
+
+    const { email, name, company, phone, customFields } = validation.data
 
     if (!isSupabaseConfigured()) {
       // Demo mode - return success
@@ -137,7 +154,13 @@ export async function POST(
 
     const supabase = getAdminClient()
     if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+      return apiError('INTERNAL_ERROR', 'Database not configured')
+    }
+
+    // Validate document ID format to prevent injection
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(id)) {
+      return apiError('BAD_REQUEST', 'Invalid document ID')
     }
 
     // Verify document exists and has lead capture enabled
@@ -149,12 +172,12 @@ export async function POST(
       .single()
 
     if (docError || !doc) {
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+      return apiError('NOT_FOUND', 'Document not found')
     }
 
     const leadCapture = doc.lead_capture as { enabled: boolean } | null
     if (!leadCapture?.enabled) {
-      return NextResponse.json({ error: 'Lead capture not enabled' }, { status: 400 })
+      return apiError('BAD_REQUEST', 'Lead capture not enabled')
     }
 
     // Check if email already submitted for this document
@@ -162,7 +185,7 @@ export async function POST(
       .from('pagelink_leads')
       .select('id')
       .eq('document_id', id)
-      .eq('email', email.toLowerCase())
+      .eq('email', email) // Already normalized by Zod
       .single()
 
     if (existingLead) {
@@ -179,6 +202,17 @@ export async function POST(
       })
     }
 
+    // Sanitize custom fields - remove any potentially dangerous content
+    const sanitizedCustomFields: Record<string, string> = {}
+    if (customFields) {
+      for (const [key, value] of Object.entries(customFields)) {
+        // Only allow safe field names and values
+        const safeKey = key.replace(/[<>'"]/g, '').substring(0, 50)
+        const safeValue = String(value).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').substring(0, 500)
+        sanitizedCustomFields[safeKey] = safeValue
+      }
+    }
+
     // Create new lead
     const { data: newLead, error: insertError } = await supabase
       .from('pagelink_leads')
@@ -186,13 +220,13 @@ export async function POST(
         id: crypto.randomUUID(),
         document_id: id,
         user_id: doc.user_id,
-        email: email.toLowerCase(),
+        email: email, // Already normalized by Zod
         name: name || null,
         company: company || null,
         phone: phone || null,
-        custom_fields: customFields || {},
-        ip_address: request.headers.get('x-forwarded-for')?.split(',')[0] || null,
-        user_agent: request.headers.get('user-agent') || null,
+        custom_fields: sanitizedCustomFields,
+        ip_address: request.headers.get('x-forwarded-for')?.split(',')[0]?.substring(0, 45) || null,
+        user_agent: request.headers.get('user-agent')?.substring(0, 500) || null,
         created_at: new Date().toISOString(),
       })
       .select()
@@ -200,7 +234,7 @@ export async function POST(
 
     if (insertError) {
       console.error('Error creating lead:', insertError)
-      return NextResponse.json({ error: 'Failed to submit' }, { status: 500 })
+      return apiError('INTERNAL_ERROR', 'Failed to submit')
     }
 
     return NextResponse.json({
@@ -210,7 +244,7 @@ export async function POST(
     })
   } catch (error) {
     console.error('Lead submission error:', error)
-    return NextResponse.json({ error: 'Failed to submit lead' }, { status: 500 })
+    return apiError('INTERNAL_ERROR', 'Failed to submit lead')
   }
 }
 
