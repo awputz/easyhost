@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
             })
             .eq('id', userId)
 
-          console.log(`User ${userId} upgraded to ${plan}`)
+          // User upgraded successfully
         }
         break
       }
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
               .eq('id', userId)
           }
 
-          console.log(`Subscription updated for user ${userId}: ${status}`)
+          // Subscription updated
         }
         break
       }
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
             })
             .eq('id', userId)
 
-          console.log(`User ${userId} downgraded to free`)
+          // User downgraded to free
         }
         break
       }
@@ -140,9 +140,7 @@ export async function POST(request: NextRequest) {
           .eq('stripe_customer_id', customerId)
           .single()
 
-        if (profile) {
-          console.log(`Invoice paid for user ${profile.id}`)
-        }
+        // Invoice paid handled
         break
       }
 
@@ -157,15 +155,12 @@ export async function POST(request: NextRequest) {
           .eq('stripe_customer_id', customerId)
           .single()
 
-        if (profile) {
-          console.log(`Payment failed for user ${profile.id} (${profile.email})`)
-          // TODO: Send notification email about payment failure
-        }
+        // TODO: Send notification email about payment failure if profile exists
         break
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        // Unhandled event type - no action needed
     }
 
     return NextResponse.json({ received: true })
