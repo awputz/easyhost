@@ -29,6 +29,7 @@ import {
   Code2,
   MessageSquare,
   FlaskConical,
+  Webhook,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocumentSettings } from '@/components/pagelink/document-settings'
@@ -40,6 +41,7 @@ import { LeadCaptureSettings, LeadCaptureConfig } from '@/components/pagelink/le
 import { EmbedSettings } from '@/components/pagelink/embed-settings'
 import { FeedbackSettings, FeedbackConfig } from '@/components/pagelink/feedback-settings'
 import { ABTestSettings, ABTestConfig } from '@/components/pagelink/ab-test-settings'
+import { WebhookSettings, WebhookConfig } from '@/components/pagelink/webhook-settings'
 
 interface ChatMessage {
   id: string
@@ -67,6 +69,7 @@ interface Document {
   lead_capture: LeadCaptureConfig | null
   feedback_config: FeedbackConfig | null
   ab_test_config: ABTestConfig | null
+  webhook_config: WebhookConfig | null
 }
 
 type DeviceSize = 'desktop' | 'tablet' | 'mobile'
@@ -104,6 +107,7 @@ export default function DocumentEditPage({
   const [showEmbed, setShowEmbed] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showABTest, setShowABTest] = useState(false)
+  const [showWebhooks, setShowWebhooks] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
@@ -502,6 +506,23 @@ export default function DocumentEditPage({
     }
   }
 
+  const handleWebhookSave = async (webhookConfig: WebhookConfig) => {
+    if (!document) return
+
+    const response = await fetch(`/api/pagelink/documents/${document.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ webhookConfig }),
+    })
+
+    if (response.ok) {
+      const updated = await response.json()
+      setDocument({ ...document, webhook_config: updated.webhook_config })
+    } else {
+      throw new Error('Failed to save webhook settings')
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -673,6 +694,25 @@ export default function DocumentEditPage({
               title="View A/B Test Results"
             >
               <FlaskConical className="w-5 h-5 text-zinc-400" />
+            </Button>
+          </Link>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowWebhooks(true)}
+            title="Webhook Settings"
+          >
+            <Webhook className="w-5 h-5 text-zinc-400" />
+          </Button>
+
+          <Link href={`/d/${document.slug}/webhooks`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="View Webhook Logs"
+            >
+              <Webhook className="w-5 h-5 text-zinc-400" />
             </Button>
           </Link>
 
@@ -1027,6 +1067,15 @@ export default function DocumentEditPage({
         documentHtml={documentHtml}
         config={document.ab_test_config || null}
         onSave={handleABTestSave}
+      />
+
+      {/* Webhooks Modal */}
+      <WebhookSettings
+        isOpen={showWebhooks}
+        onClose={() => setShowWebhooks(false)}
+        documentId={document.id}
+        config={document.webhook_config || null}
+        onSave={handleWebhookSave}
       />
     </div>
   )
