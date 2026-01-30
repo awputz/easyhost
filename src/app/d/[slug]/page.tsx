@@ -24,6 +24,8 @@ import {
   Archive,
   Palette,
   Search,
+  Users,
+  ClipboardList,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocumentSettings } from '@/components/pagelink/document-settings'
@@ -31,6 +33,7 @@ import { VersionHistory } from '@/components/pagelink/version-history'
 import { ShareModal } from '@/components/pagelink/share-modal'
 import { BrandingSettings, BrandingConfig } from '@/components/pagelink/branding-settings'
 import { SEOSettings, SEOConfig } from '@/components/pagelink/seo-settings'
+import { LeadCaptureSettings, LeadCaptureConfig } from '@/components/pagelink/lead-capture-settings'
 
 interface ChatMessage {
   id: string
@@ -55,6 +58,7 @@ interface Document {
   chat_history: ChatMessage[]
   custom_branding: BrandingConfig | null
   seo: SEOConfig | null
+  lead_capture: LeadCaptureConfig | null
 }
 
 type DeviceSize = 'desktop' | 'tablet' | 'mobile'
@@ -88,6 +92,7 @@ export default function DocumentEditPage({
   const [showShareModal, setShowShareModal] = useState(false)
   const [showBranding, setShowBranding] = useState(false)
   const [showSeo, setShowSeo] = useState(false)
+  const [showLeadCapture, setShowLeadCapture] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
@@ -430,6 +435,23 @@ export default function DocumentEditPage({
     }
   }
 
+  const handleLeadCaptureSave = async (leadCapture: LeadCaptureConfig) => {
+    if (!document) return
+
+    const response = await fetch(`/api/pagelink/documents/${document.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadCapture }),
+    })
+
+    if (response.ok) {
+      const updated = await response.json()
+      setDocument({ ...document, lead_capture: updated.lead_capture })
+    } else {
+      throw new Error('Failed to save lead capture settings')
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -537,6 +559,25 @@ export default function DocumentEditPage({
           >
             <Search className="w-5 h-5 text-zinc-400" />
           </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowLeadCapture(true)}
+            title="Lead Capture Settings"
+          >
+            <Users className="w-5 h-5 text-zinc-400" />
+          </Button>
+
+          <Link href={`/d/${document.slug}/leads`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="View Leads"
+            >
+              <ClipboardList className="w-5 h-5 text-zinc-400" />
+            </Button>
+          </Link>
 
           <Button
             variant="ghost"
@@ -832,6 +873,26 @@ export default function DocumentEditPage({
           seo: document.seo,
         }}
         onSave={handleSeoSave}
+      />
+
+      {/* Lead Capture Modal */}
+      <LeadCaptureSettings
+        isOpen={showLeadCapture}
+        onClose={() => setShowLeadCapture(false)}
+        config={document.lead_capture || {
+          enabled: false,
+          requireEmail: true,
+          requireName: false,
+          requireCompany: false,
+          requirePhone: false,
+          customFields: [],
+          headline: 'Get access to this document',
+          description: 'Enter your email to view the full document.',
+          buttonText: 'Continue',
+          showPreview: true,
+          previewPercentage: 30,
+        }}
+        onSave={handleLeadCaptureSave}
       />
     </div>
   )

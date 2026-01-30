@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PasswordGate } from './password-gate'
+import { EmailGate, LeadData } from './email-gate'
+import type { LeadCaptureConfig } from './lead-capture-settings'
 
 export interface BrandingConfig {
   logoUrl?: string | null
@@ -14,12 +16,14 @@ export interface BrandingConfig {
 }
 
 interface DocumentViewerProps {
+  documentId?: string
   slug: string
   title: string
   html: string | null
   hasPassword: boolean
   showBadge: boolean
   branding?: BrandingConfig | null
+  leadCapture?: LeadCaptureConfig | null
 }
 
 const FONT_IMPORTS: Record<string, string> = {
@@ -45,14 +49,27 @@ const FONT_FAMILIES: Record<string, string> = {
 }
 
 export function DocumentViewer({
+  documentId,
   slug,
   title,
   html: initialHtml,
   hasPassword,
   showBadge,
   branding,
+  leadCapture,
 }: DocumentViewerProps) {
   const [html, setHtml] = useState(initialHtml)
+  const [leadCaptured, setLeadCaptured] = useState(false)
+
+  // Check localStorage for lead capture bypass
+  useEffect(() => {
+    if (leadCapture?.enabled && documentId) {
+      const captured = localStorage.getItem(`pagelink_lead_${documentId}`)
+      if (captured) {
+        setLeadCaptured(true)
+      }
+    }
+  }, [leadCapture, documentId])
 
   // If document requires password and we don't have HTML yet
   if (hasPassword && !html) {
@@ -68,6 +85,42 @@ export function DocumentViewer({
   // We have HTML - render the document
   if (!html) {
     return null
+  }
+
+  // Check if lead capture is required
+  if (leadCapture?.enabled && !leadCaptured && documentId) {
+    const handleLeadSubmit = async (data: LeadData) => {
+      const response = await fetch(`/api/pagelink/documents/${documentId}/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to submit')
+      }
+
+      // Store in localStorage to bypass gate on future visits
+      localStorage.setItem(`pagelink_lead_${documentId}`, 'true')
+      setLeadCaptured(true)
+    }
+
+    // Generate preview HTML if enabled
+    let previewHtml: string | undefined
+    if (leadCapture.showPreview) {
+      previewHtml = html
+    }
+
+    return (
+      <EmailGate
+        documentSlug={slug}
+        documentTitle={title}
+        config={leadCapture}
+        onSubmit={handleLeadSubmit}
+        previewHtml={previewHtml}
+      />
+    )
   }
 
   // Apply branding styles
