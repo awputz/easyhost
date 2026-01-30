@@ -37,13 +37,18 @@ export default function ShortLinkPage() {
     const fetchLink = async () => {
       try {
         const response = await fetch(`/api/e/${slug}`)
-        const data = await response.json()
 
         if (!response.ok) {
-          setError(data.error || 'Link not found')
+          try {
+            const data = await response.json()
+            setError(data.error || 'Link not found')
+          } catch {
+            setError('Link not found')
+          }
           return
         }
 
+        const data = await response.json()
         setLinkData(data)
 
         // If no password required, redirect immediately
@@ -74,13 +79,17 @@ export default function ShortLinkPage() {
         body: JSON.stringify({ password }),
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        setPasswordError(data.error || 'Invalid password')
+        try {
+          const data = await response.json()
+          setPasswordError(data.error || 'Invalid password')
+        } catch {
+          setPasswordError('Invalid password')
+        }
         return
       }
 
+      const data = await response.json()
       // Password verified, redirect
       window.location.href = data.target_url
     } catch {

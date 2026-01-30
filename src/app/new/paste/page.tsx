@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -9,8 +9,26 @@ export default function PasteHTMLPage() {
   const router = useRouter()
   const [html, setHtml] = useState('')
   const [title, setTitle] = useState('')
-  const [showPreview, setShowPreview] = useState(true)
+  const [showPreview, setShowPreview] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Handle responsive layout
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Show preview by default on desktop
+  useEffect(() => {
+    if (!isMobile) {
+      setShowPreview(true)
+    }
+  }, [isMobile])
 
   const handleCreate = async () => {
     if (!html.trim()) {
@@ -47,50 +65,52 @@ export default function PasteHTMLPage() {
   return (
     <div className="min-h-screen bg-cream-50">
       {/* Header */}
-      <header className="bg-white border-b border-navy-100 px-6 py-4 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <header className="bg-white border-b border-navy-100 px-4 md:px-6 py-4 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 md:gap-4 min-w-0">
             <Link
               href="/new"
-              className="text-sm text-navy-400 hover:text-navy-600 transition-colors"
+              className="text-sm text-navy-400 hover:text-navy-600 transition-colors flex-shrink-0"
             >
-              &larr; Back
+              &larr;
             </Link>
-            <div className="w-px h-6 bg-navy-100" />
+            <div className="w-px h-6 bg-navy-100 hidden md:block" />
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Page title"
-              className="font-serif text-xl font-medium bg-transparent border-none focus:outline-none placeholder-navy-300 text-navy-900 w-64"
+              className="font-serif text-lg md:text-xl font-medium bg-transparent border-none focus:outline-none placeholder-navy-300 text-navy-900 min-w-0 flex-1"
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className="px-4 py-2 text-sm text-navy-600 hover:text-navy-900 hover:bg-navy-50 rounded-md transition-colors"
+              className="px-3 py-2 text-xs md:text-sm text-navy-600 hover:text-navy-900 hover:bg-navy-50 rounded-md transition-colors"
             >
-              {showPreview ? 'Hide preview' : 'Show preview'}
+              {showPreview ? 'Editor' : 'Preview'}
             </button>
 
             <button
               onClick={handleCreate}
               disabled={!html.trim() || creating}
-              className="px-5 py-2 bg-navy-800 hover:bg-navy-700 disabled:bg-navy-200 disabled:cursor-not-allowed text-cream-50 rounded-lg text-sm font-medium transition-colors"
+              className="px-4 md:px-5 py-2 bg-navy-800 hover:bg-navy-700 disabled:bg-navy-200 disabled:cursor-not-allowed text-cream-50 rounded-lg text-sm font-medium transition-colors"
             >
-              {creating ? 'Creating...' : 'Create page'}
+              {creating ? 'Creating...' : 'Create'}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <div className={`flex ${showPreview ? '' : 'justify-center'}`}>
-        {/* Editor */}
+      {/* Main content - responsive */}
+      <div className="flex flex-col md:flex-row">
+        {/* Editor - full width on mobile when preview hidden, half on desktop */}
         <div
           className={`${
-            showPreview ? 'w-1/2 border-r border-navy-100' : 'w-full max-w-4xl'
+            isMobile
+              ? showPreview ? 'hidden' : 'w-full'
+              : showPreview ? 'w-1/2 border-r border-navy-100' : 'w-full'
           } h-[calc(100vh-65px)]`}
         >
           <div className="p-4 border-b border-navy-100 bg-white">
@@ -115,14 +135,14 @@ export default function PasteHTMLPage() {
   <p>This is my hosted page.</p>
 </body>
 </html>`}
-            className="w-full h-[calc(100%-49px)] p-6 font-mono text-sm bg-white text-navy-800 resize-none focus:outline-none placeholder-navy-300"
+            className="w-full h-[calc(100%-49px)] p-4 md:p-6 font-mono text-sm bg-white text-navy-800 resize-none focus:outline-none placeholder-navy-300"
             spellCheck={false}
           />
         </div>
 
-        {/* Preview */}
+        {/* Preview - full width on mobile when shown, half on desktop */}
         {showPreview && (
-          <div className="w-1/2 h-[calc(100vh-65px)] bg-white">
+          <div className={`${isMobile ? 'w-full' : 'w-1/2'} h-[calc(100vh-65px)] bg-white`}>
             <div className="p-4 border-b border-navy-100">
               <span className="font-mono text-xs text-navy-400 uppercase tracking-wider">Preview</span>
             </div>
