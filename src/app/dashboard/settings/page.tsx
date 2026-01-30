@@ -36,11 +36,14 @@ import {
   Gauge,
   Calendar,
   CreditCard,
+  Globe,
+  ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format, parseISO } from 'date-fns'
 import { InviteMemberModal } from '@/components/settings/invite-member-modal'
 import { BillingTab } from '@/components/settings/billing-tab'
+import { CustomDomainSettings } from '@/components/pagelink/custom-domain-settings'
 import type { Profile, Workspace, WorkspaceRole } from '@/types'
 
 interface TeamMember {
@@ -65,6 +68,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [domainsOpen, setDomainsOpen] = useState(false)
 
   // Form state
   const [fullName, setFullName] = useState('')
@@ -421,15 +425,25 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="customDomain">Custom domain (optional)</Label>
-                  <Input
-                    id="customDomain"
-                    value={customDomain}
-                    onChange={(e) => setCustomDomain(e.target.value)}
-                    placeholder="assets.yourcompany.com"
-                  />
+                  <Label htmlFor="customDomain">Custom domain</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="customDomain"
+                      value={customDomain}
+                      onChange={(e) => setCustomDomain(e.target.value)}
+                      placeholder="docs.yourcompany.com"
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => setDomainsOpen(true)}
+                    >
+                      <Globe className="h-4 w-4 mr-2" />
+                      Manage Domains
+                    </Button>
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    Point a CNAME to ez.host to use your own domain
+                    Use your own domain for documents. Requires DNS configuration.
                   </p>
                 </div>
               </div>
@@ -633,6 +647,12 @@ export default function SettingsPage() {
         open={inviteOpen}
         onOpenChange={setInviteOpen}
         onInviteSent={handleInviteSent}
+      />
+
+      <CustomDomainSettings
+        isOpen={domainsOpen}
+        onClose={() => setDomainsOpen(false)}
+        workspaceId={workspace?.id || ''}
       />
     </div>
   )
