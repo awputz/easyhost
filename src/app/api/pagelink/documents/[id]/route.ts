@@ -78,6 +78,7 @@ export async function PUT(
       leadCapture,
       feedbackConfig,
       abTestConfig,
+      webhookConfig,
     } = body
 
     if (!isSupabaseConfigured()) {
@@ -120,6 +121,7 @@ export async function PUT(
     if (leadCapture !== undefined) updates.lead_capture = leadCapture
     if (feedbackConfig !== undefined) updates.feedback_config = feedbackConfig
     if (abTestConfig !== undefined) updates.ab_test_config = abTestConfig
+    if (webhookConfig !== undefined) updates.webhook_config = webhookConfig
 
     // Handle password
     if (removePassword) {
