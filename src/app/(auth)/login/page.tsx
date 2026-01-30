@@ -49,8 +49,12 @@ export default function LoginPage() {
 
       router.push('/dashboard')
       router.refresh()
-    } catch {
-      setError('An unexpected error occurred')
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('fetch')) {
+        setError('Unable to connect. Please check your internet connection and try again.')
+      } else {
+        setError('An unexpected error occurred. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
@@ -61,7 +65,7 @@ export default function LoginPage() {
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
         <CardDescription>
-          Enter your email and password to sign in to your account
+          Enter your email and password to log in to your account
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -70,7 +74,7 @@ export default function LoginPage() {
             <div className="p-3 text-sm text-warning bg-warning/10 border border-warning/20 rounded-md flex items-start gap-2">
               <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <div>
-                <strong>Demo Mode:</strong> Supabase not configured. Click sign in to access the demo dashboard.
+                <strong>Demo Mode:</strong> Supabase not configured. Click log in to access the demo dashboard.
               </div>
             </div>
           )}
@@ -115,7 +119,7 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isConfigured ? 'Sign in' : 'Enter Demo'}
+            {isConfigured ? 'Log in' : 'Enter Demo'}
           </Button>
           <p className="text-sm text-muted-foreground text-center">
             Don&apos;t have an account?{' '}
