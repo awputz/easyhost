@@ -47,8 +47,8 @@ export default function HomePage() {
           </h1>
 
           <p className="text-xl text-navy-600 mb-10 max-w-xl mx-auto leading-relaxed">
-            Upload files, paste HTML, or let AI create pages for you.
-            Get a shareable link in seconds.
+            Upload files, create collections, and share with custom links.
+            Simple hosting for documents, images, and more.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -118,7 +118,7 @@ export default function HomePage() {
               {
                 step: '01',
                 title: 'Upload or create',
-                description: 'Paste HTML, upload a file, import a URL, or let AI generate your page.',
+                description: 'Upload files, create collections, or paste HTML directly.',
               },
               {
                 step: '02',
@@ -157,7 +157,7 @@ export default function HomePage() {
             {[
               {
                 title: 'AI Generation',
-                description: 'Describe what you want and watch it build instantly.',
+                description: 'Coming soon — describe what you want and watch it build.',
               },
               {
                 title: 'Lightning Fast',
