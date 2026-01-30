@@ -96,6 +96,120 @@ export function sanitizeUrl(input: string): string {
 }
 
 /**
+ * Private/internal IP ranges that should be blocked for SSRF prevention
+ */
+const PRIVATE_IP_PATTERNS = [
+  /^127\./,                          // Loopback
+  /^10\./,                           // Private Class A
+  /^172\.(1[6-9]|2[0-9]|3[0-1])\./,  // Private Class B
+  /^192\.168\./,                     // Private Class C
+  /^169\.254\./,                     // Link-local
+  /^0\./,                            // Current network
+  /^::1$/,                           // IPv6 loopback
+  /^fe80:/i,                         // IPv6 link-local
+  /^fc00:/i,                         // IPv6 unique local
+  /^fd00:/i,                         // IPv6 unique local
+]
+
+const BLOCKED_HOSTNAMES = [
+  'localhost',
+  'localhost.localdomain',
+  'metadata.google.internal',        // GCP metadata
+  'metadata',                         // Cloud metadata shorthand
+  '169.254.169.254',                 // AWS/Azure/GCP metadata
+  '169.254.170.2',                   // AWS ECS metadata
+  'instance-data',                   // AWS instance data
+  'kubernetes.default',              // Kubernetes
+  'kubernetes.default.svc',
+]
+
+/**
+ * Check if a hostname is a private/internal address (SSRF prevention)
+ */
+function isPrivateHost(hostname: string): boolean {
+  const lowerHost = hostname.toLowerCase()
+
+  // Check blocked hostnames
+  if (BLOCKED_HOSTNAMES.includes(lowerHost)) {
+    return true
+  }
+
+  // Check IP patterns
+  for (const pattern of PRIVATE_IP_PATTERNS) {
+    if (pattern.test(hostname)) {
+      return true
+    }
+  }
+
+  // Block .internal, .local, .localhost TLDs
+  if (lowerHost.endsWith('.internal') ||
+      lowerHost.endsWith('.local') ||
+      lowerHost.endsWith('.localhost') ||
+      lowerHost.endsWith('.localdomain')) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Sanitize webhook URL - prevents SSRF attacks
+ * Only allows public HTTP/HTTPS URLs
+ */
+export function sanitizeWebhookUrl(input: string): { valid: boolean; url: string; error?: string } {
+  if (!input) {
+    return { valid: false, url: '', error: 'URL is required' }
+  }
+
+  const trimmed = input.trim().slice(0, 2000)
+
+  try {
+    const url = new URL(trimmed)
+
+    // Only allow http and https protocols
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return { valid: false, url: '', error: 'Only HTTP and HTTPS URLs are allowed' }
+    }
+
+    // Check for private/internal hosts (SSRF prevention)
+    if (isPrivateHost(url.hostname)) {
+      return { valid: false, url: '', error: 'Private/internal URLs are not allowed' }
+    }
+
+    // Block URLs with credentials
+    if (url.username || url.password) {
+      return { valid: false, url: '', error: 'URLs with credentials are not allowed' }
+    }
+
+    return { valid: true, url: url.href }
+  } catch {
+    return { valid: false, url: '', error: 'Invalid URL format' }
+  }
+}
+
+/**
+ * Sanitize CSS to prevent injection attacks
+ * Removes potentially dangerous CSS constructs
+ */
+export function sanitizeCss(input: string): string {
+  if (!input) return ''
+
+  return input
+    // Remove any script-like content
+    .replace(/expression\s*\(/gi, '')
+    .replace(/javascript\s*:/gi, '')
+    .replace(/behavior\s*:/gi, '')
+    .replace(/-moz-binding\s*:/gi, '')
+    // Remove @import to prevent loading external stylesheets
+    .replace(/@import\s+/gi, '/* @import blocked */ ')
+    // Remove url() that references javascript: or data:
+    .replace(/url\s*\(\s*(['"]?)\s*javascript:/gi, 'url($1blocked:')
+    .replace(/url\s*\(\s*(['"]?)\s*data:/gi, 'url($1blocked:')
+    // Limit length
+    .slice(0, 50000)
+}
+
+/**
  * Sanitize search query
  */
 export function sanitizeSearchQuery(input: string, maxLength = 200): string {

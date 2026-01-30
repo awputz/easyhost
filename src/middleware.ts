@@ -20,6 +20,13 @@ const MAIN_DOMAINS = [
 // Check if the host is a custom domain
 function isCustomDomain(host: string): boolean {
   const hostname = host.split(':')[0] // Remove port if present
+
+  // Always treat Vercel preview deployments as main domains
+  if (hostname.endsWith('.vercel.app')) {
+    return false
+  }
+
+  // Check against main domains
   return !MAIN_DOMAINS.some(domain =>
     hostname === domain || hostname.endsWith(`.${domain}`)
   )
