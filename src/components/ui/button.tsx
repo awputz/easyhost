@@ -5,33 +5,35 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-white text-black hover:bg-white/90 shadow-sm",
+          "bg-navy-800 text-cream-50 hover:bg-navy-700 shadow-sm",
         primary:
-          "bg-[#0071e3] text-white hover:bg-[#0077ed] shadow-sm",
+          "bg-navy-900 text-cream-50 hover:bg-navy-800 shadow-sm",
         destructive:
-          "bg-[#ff453a] text-white shadow-sm hover:bg-[#ff453a]/90",
+          "bg-red-600 text-white shadow-sm hover:bg-red-700",
         outline:
-          "border border-white/20 bg-transparent hover:bg-white/5 hover:border-white/30",
+          "border border-navy-200 bg-transparent text-navy-700 hover:bg-navy-50 hover:border-navy-300",
         secondary:
-          "bg-white/10 text-white shadow-sm hover:bg-white/15",
+          "bg-navy-100 text-navy-800 shadow-sm hover:bg-navy-200",
         ghost:
-          "text-white/60 hover:text-white hover:bg-white/5",
+          "text-navy-600 hover:text-navy-900 hover:bg-navy-50",
         link:
-          "text-[#0071e3] underline-offset-4 hover:underline",
+          "text-navy-700 underline-offset-4 hover:underline",
+        cream:
+          "bg-cream-100 text-navy-800 hover:bg-cream-200 border border-cream-200",
       },
       size: {
-        default: "h-10 px-5 py-2 text-sm rounded-xl",
-        sm: "h-9 px-4 text-sm rounded-lg",
-        lg: "h-12 px-8 text-base rounded-xl",
-        xl: "h-14 px-10 text-base rounded-2xl",
-        icon: "h-10 w-10 rounded-xl",
-        "icon-sm": "h-8 w-8 rounded-lg",
-        "icon-lg": "h-12 w-12 rounded-xl",
+        default: "h-10 px-5 py-2 text-sm rounded-lg",
+        sm: "h-9 px-4 text-sm rounded-md",
+        lg: "h-12 px-8 text-base rounded-lg",
+        xl: "h-14 px-10 text-base rounded-xl",
+        icon: "h-10 w-10 rounded-lg",
+        "icon-sm": "h-8 w-8 rounded-md",
+        "icon-lg": "h-12 w-12 rounded-lg",
       },
       rounded: {
         default: "",

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, Globe, AlertCircle, Check } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function ImportURLPage() {
@@ -49,7 +48,7 @@ export default function ImportURLPage() {
       setError(
         e instanceof Error
           ? e.message
-          : 'Could not fetch that URL. Make sure it\'s a valid webpage.'
+          : 'Could not fetch that URL. Make sure it is a valid webpage.'
       )
     } finally {
       setLoading(false)
@@ -86,83 +85,70 @@ export default function ImportURLPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
-      <div className="max-w-3xl mx-auto py-12 px-6">
-        {/* Back button */}
+    <div className="min-h-screen bg-cream-50">
+      <div className="max-w-2xl mx-auto py-12 px-6">
+        {/* Back link */}
         <Link
           href="/new"
-          className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-8 transition-colors"
+          className="inline-block text-sm text-navy-400 hover:text-navy-600 mb-10 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back
+          &larr; Back
         </Link>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="font-serif text-2xl font-semibold text-navy-900 mb-2">
             Import from URL
           </h1>
-          <p className="text-gray-500">
-            Enter any webpage URL and we'll host a copy for you
+          <p className="text-navy-500">
+            Enter any webpage URL and we will host a copy for you
           </p>
         </div>
 
         {/* URL Input */}
         <div className="flex gap-3 mb-6">
-          <div className="flex-1 relative">
-            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && fetchURL()}
-              placeholder="https://example.com/page"
-              className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && fetchURL()}
+            placeholder="https://example.com/page"
+            className="flex-1 px-4 py-3 bg-white border border-navy-100 rounded-lg text-navy-800 placeholder-navy-300 focus:outline-none focus:ring-2 focus:ring-navy-200 focus:border-navy-200 transition-all"
+          />
           <button
             onClick={fetchURL}
             disabled={!url || loading}
-            className="px-8 py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+            className="px-6 py-3 bg-navy-800 hover:bg-navy-700 disabled:bg-navy-200 disabled:cursor-not-allowed text-cream-50 rounded-lg font-medium transition-colors"
           >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Fetching...
-              </>
-            ) : (
-              'Fetch'
-            )}
+            {loading ? 'Fetching...' : 'Fetch'}
           </button>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-3 p-4 bg-red-50 text-red-600 rounded-xl mb-6">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <div className="p-4 bg-red-50 text-red-600 rounded-lg mb-6 text-sm">
             {error}
           </div>
         )}
 
         {/* Preview */}
         {preview && (
-          <div className="space-y-4 animate-fade-in-up">
-            <div className="flex items-center gap-2 text-green-600 mb-4">
-              <Check className="w-5 h-5" />
-              <span className="font-medium">Page fetched successfully!</span>
-            </div>
+          <div className="space-y-4">
+            <p className="text-green-600 text-sm font-medium">
+              Page fetched successfully
+            </p>
 
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Page title"
-              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 bg-white border border-navy-100 rounded-lg text-navy-800 placeholder-navy-300 focus:outline-none focus:ring-2 focus:ring-navy-200"
             />
 
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm text-gray-500 font-medium">
-                Preview
+            <div className="bg-white rounded-lg border border-navy-100 overflow-hidden">
+              <div className="p-4 border-b border-navy-100">
+                <span className="font-mono text-xs text-navy-400 uppercase tracking-wider">Preview</span>
               </div>
               <iframe
                 srcDoc={preview}
@@ -175,38 +161,31 @@ export default function ImportURLPage() {
             <button
               onClick={handleCreate}
               disabled={creating}
-              className="w-full py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 bg-navy-800 hover:bg-navy-700 disabled:bg-navy-200 text-cream-50 rounded-lg font-medium transition-colors"
             >
-              {creating ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Host this page'
-              )}
+              {creating ? 'Creating...' : 'Host this page'}
             </button>
           </div>
         )}
 
         {/* Info */}
         {!preview && !error && (
-          <div className="mt-8 p-6 bg-white rounded-xl border border-gray-100">
-            <h3 className="font-semibold text-gray-900 mb-2">How it works</h3>
-            <ul className="space-y-2 text-gray-600 text-sm">
-              <li className="flex items-start gap-2">
-                <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">1</span>
+          <div className="mt-8 p-6 bg-white rounded-lg border border-navy-100">
+            <h3 className="font-medium text-navy-900 mb-3">How it works</h3>
+            <ol className="space-y-2 text-navy-600 text-sm">
+              <li className="flex items-start gap-3">
+                <span className="font-mono text-xs text-navy-400">01</span>
                 Enter the URL of any public webpage
               </li>
-              <li className="flex items-start gap-2">
-                <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">2</span>
-                We'll fetch and display a preview
+              <li className="flex items-start gap-3">
+                <span className="font-mono text-xs text-navy-400">02</span>
+                We will fetch and display a preview
               </li>
-              <li className="flex items-start gap-2">
-                <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">3</span>
-                Click "Host this page" to get your own shareable link
+              <li className="flex items-start gap-3">
+                <span className="font-mono text-xs text-navy-400">03</span>
+                Click &quot;Host this page&quot; to get your own shareable link
               </li>
-            </ul>
+            </ol>
           </div>
         )}
       </div>
