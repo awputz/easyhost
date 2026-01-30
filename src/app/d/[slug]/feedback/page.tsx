@@ -128,7 +128,7 @@ export default function FeedbackPage({
         body: JSON.stringify({ feedbackId, status }),
       })
       if (response.ok) {
-        setFeedback(feedback.map(f =>
+        setFeedback(prev => prev.map(f =>
           f.id === feedbackId ? { ...f, status } : f
         ))
       }
@@ -149,7 +149,7 @@ export default function FeedbackPage({
         method: 'DELETE',
       })
       if (response.ok) {
-        setFeedback(feedback.filter(f => f.id !== feedbackId))
+        setFeedback(prev => prev.filter(f => f.id !== feedbackId))
         setPagination(prev => ({ ...prev, total: prev.total - 1 }))
       }
     } catch (error) {

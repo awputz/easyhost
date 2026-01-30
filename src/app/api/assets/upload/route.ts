@@ -139,8 +139,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file type
-    if (!ALLOWED_TYPES.includes(file.type) && !file.type.startsWith('text/')) {
+    // Validate file type - strict whitelist only (no blanket text/* acceptance)
+    if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: 'File type not supported' },
         { status: 400 }

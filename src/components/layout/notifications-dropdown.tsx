@@ -1,22 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect, useCallback } from 'react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Bell,
-  Eye,
-  Download,
-  Code,
-  Users,
-  Link2,
-  Check,
-} from 'lucide-react'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
 
@@ -33,110 +23,115 @@ export function NotificationsDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchNotifications()
-  }, [])
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
+      setError(null)
       const response = await fetch('/api/notifications?limit=10')
       if (response.ok) {
         const data = await response.json()
         setNotifications(data.notifications || [])
         setUnreadCount(data.unread_count || 0)
+      } else {
+        setError('Failed to load')
       }
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error)
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err)
+      setError('Failed to load')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchNotifications()
+  }, [fetchNotifications])
 
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
     setUnreadCount(0)
   }
 
-  const getNotificationIcon = (type: string) => {
+  const getTypeLabel = (type: string) => {
     switch (type) {
       case 'view':
-        return <Eye className="h-4 w-4 text-blue-500" />
+        return 'VIEW'
       case 'download':
-        return <Download className="h-4 w-4 text-green-500" />
+        return 'DL'
       case 'embed_load':
-        return <Code className="h-4 w-4 text-orange-500" />
+        return 'EMBED'
       case 'member_joined':
-        return <Users className="h-4 w-4 text-purple-500" />
+        return 'TEAM'
       case 'link_expired':
-        return <Link2 className="h-4 w-4 text-red-500" />
+        return 'LINK'
       default:
-        return <Bell className="h-4 w-4 text-muted-foreground" />
+        return 'INFO'
     }
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+        <button className="relative w-10 h-10 flex items-center justify-center rounded-lg text-navy-500 hover:text-navy-700 hover:bg-navy-50 transition-colors">
+          <span className="text-lg">&#128276;</span>
           {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
+            <span className="absolute top-2 right-2 w-2 h-2 bg-navy-800 rounded-full" />
           )}
-        </Button>
+        </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h4 className="font-semibold">Notifications</h4>
+      <DropdownMenuContent align="end" className="w-80 bg-white border-navy-100 rounded-lg">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-navy-100">
+          <h4 className="font-medium text-navy-900">Notifications</h4>
           {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto py-1 px-2 text-xs"
+            <button
+              className="text-xs text-navy-500 hover:text-navy-700 transition-colors"
               onClick={markAllAsRead}
             >
-              <Check className="h-3 w-3 mr-1" />
               Mark all read
-            </Button>
+            </button>
           )}
         </div>
 
         <ScrollArea className="h-[300px]">
           {loading ? (
-            <div className="p-4 text-center text-muted-foreground">
+            <div className="p-4 text-center text-navy-400 text-sm">
               Loading...
+            </div>
+          ) : error ? (
+            <div className="p-4 text-center text-navy-400 text-sm">
+              {error}
             </div>
           ) : notifications.length === 0 ? (
             <div className="p-8 text-center">
-              <Bell className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">No notifications yet</p>
+              <p className="text-sm text-navy-400">No notifications yet</p>
             </div>
           ) : (
-            <div className="divide-y">
+            <div className="divide-y divide-navy-100">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={cn(
-                    'flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors cursor-pointer',
-                    !notification.read && 'bg-primary/5'
+                    'flex items-start gap-3 p-4 hover:bg-navy-50 transition-colors cursor-pointer',
+                    !notification.read && 'bg-navy-50/50'
                   )}
                 >
-                  <div className="mt-0.5">
-                    {getNotificationIcon(notification.type)}
-                  </div>
+                  <span className="font-mono text-xs text-navy-400 uppercase tracking-wider w-10 flex-shrink-0 pt-0.5">
+                    {getTypeLabel(notification.type)}
+                  </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{notification.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-sm font-medium text-navy-900">{notification.title}</p>
+                    <p className="text-xs text-navy-500 truncate">
                       {notification.description}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-navy-400 mt-1">
                       {formatDistanceToNow(parseISO(notification.created_at), {
                         addSuffix: true,
                       })}
                     </p>
                   </div>
                   {!notification.read && (
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2" />
+                    <div className="w-2 h-2 bg-navy-600 rounded-full mt-2 flex-shrink-0" />
                   )}
                 </div>
               ))}
@@ -144,10 +139,10 @@ export function NotificationsDropdown() {
           )}
         </ScrollArea>
 
-        <div className="border-t p-2">
-          <Button variant="ghost" size="sm" className="w-full">
+        <div className="border-t border-navy-100 p-2">
+          <button className="w-full py-2 text-sm text-navy-600 hover:text-navy-900 hover:bg-navy-50 rounded-md transition-colors">
             View all activity
-          </Button>
+          </button>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
