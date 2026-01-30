@@ -55,8 +55,12 @@ export default function SignupPage() {
       }
 
       setSuccess(true)
-    } catch {
-      setError('An unexpected error occurred')
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('fetch')) {
+        setError('Unable to connect. Please check your internet connection and try again.')
+      } else {
+        setError('An unexpected error occurred. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
@@ -167,7 +171,7 @@ export default function SignupPage() {
           <p className="text-sm text-muted-foreground text-center">
             Already have an account?{' '}
             <Link href="/login" className="text-primary hover:underline">
-              Sign in
+              Log in
             </Link>
           </p>
         </CardFooter>
