@@ -1,20 +1,39 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft,
   Eye,
   Users,
   TrendingUp,
+  TrendingDown,
   Globe,
   ExternalLink,
   Calendar,
   BarChart3,
   Loader2,
+  Clock,
+  MousePointer,
+  Monitor,
+  Smartphone,
+  Tablet,
+  RefreshCw,
+  Download,
+  ArrowUpRight,
+  ArrowDownRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  LineChart,
+  BarChart,
+  DonutChart,
+  FunnelChart,
+  HourlyHeatmap,
+  StatCard,
+  WorldMapChart,
+} from '@/components/pagelink/analytics-charts'
 
 interface AnalyticsData {
   document: {
@@ -32,11 +51,20 @@ interface AnalyticsData {
     views: number
     uniqueVisitors: number
     avgViewsPerDay: number
+    viewsTrend: number | null
+    visitorsTrend: number | null
+    bounceRate: number
+    avgTimeOnPage: number
+    avgScrollDepth: number
   }
   dailyStats: Array<{
     date: string
     views: number
     uniqueVisitors: number
+  }>
+  hourlyStats: Array<{
+    hour: number
+    count: number
   }>
   referrerStats: Array<{
     source: string
@@ -46,17 +74,47 @@ interface AnalyticsData {
     country: string
     count: number
   }>
+  deviceStats: Array<{
+    device: string
+    count: number
+    percentage: number
+  }>
+  browserStats: Array<{
+    browser: string
+    count: number
+    percentage: number
+  }>
+  engagementStats: {
+    bounceRate: number
+    avgTimeOnPage: number
+    avgScrollDepth: number
+    totalViews: number
+    engagedViews: number
+    engagementRate: number
+  }
+  funnelStats: {
+    steps: Array<{
+      name: string
+      count: number
+      rate: number
+    }>
+    conversionRate: number
+  }
 }
 
-export default function DocumentAnalyticsPage() {
-  const params = useParams()
+export default function DocumentAnalyticsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = use(params)
   const router = useRouter()
-  const slug = params.slug as string
 
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [days, setDays] = useState(30)
+  const [activeTab, setActiveTab] = useState<'overview' | 'engagement' | 'audience'>('overview')
 
   useEffect(() => {
     fetchAnalytics()
@@ -86,6 +144,13 @@ export default function DocumentAnalyticsPage() {
     }
   }
 
+  const formatTime = (seconds: number) => {
+    if (seconds < 60) return `${seconds}s`
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}m ${secs}s`
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -105,13 +170,11 @@ export default function DocumentAnalyticsPage() {
     )
   }
 
-  const maxViews = Math.max(...analytics.dailyStats.map(d => d.views), 1)
-
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Header */}
-      <header className="border-b border-white/5 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <header className="border-b border-white/5 px-6 py-4 sticky top-0 bg-zinc-950/90 backdrop-blur-sm z-10">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href={`/d/${slug}`}
@@ -121,11 +184,21 @@ export default function DocumentAnalyticsPage() {
             </Link>
             <div>
               <h1 className="text-lg font-semibold">{analytics.document.title}</h1>
-              <p className="text-sm text-zinc-500">Analytics Dashboard</p>
+              <p className="text-sm text-zinc-500">Advanced Analytics</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchAnalytics}
+              className="border-zinc-700"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+
             <select
               value={days}
               onChange={(e) => setDays(parseInt(e.target.value))}
@@ -149,188 +222,410 @@ export default function DocumentAnalyticsPage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-8">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <SummaryCard
-            icon={Eye}
-            label="Total Views"
-            value={analytics.document.totalViews.toLocaleString()}
-            subtext="All time"
-          />
-          <SummaryCard
-            icon={BarChart3}
-            label="Period Views"
-            value={analytics.summary.views.toLocaleString()}
-            subtext={`Last ${days} days`}
-          />
-          <SummaryCard
-            icon={Users}
-            label="Unique Visitors"
-            value={analytics.summary.uniqueVisitors.toLocaleString()}
-            subtext={`Last ${days} days`}
-          />
-          <SummaryCard
-            icon={TrendingUp}
-            label="Avg. Daily Views"
-            value={analytics.summary.avgViewsPerDay.toString()}
-            subtext={`Last ${days} days`}
-          />
+      {/* Tabs */}
+      <div className="border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex gap-1">
+            {(['overview', 'engagement', 'audience'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+                  activeTab === tab
+                    ? 'text-white'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {activeTab === tab && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
+      </div>
 
-        {/* Views Chart */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-400" />
-            Views Over Time
-          </h2>
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {activeTab === 'overview' && (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <Eye className="w-4 h-4 text-blue-400" />
+                  <span className="text-xs text-zinc-500">Total Views</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {analytics.document.totalViews.toLocaleString()}
+                </div>
+                <div className="text-xs text-zinc-500 mt-1">All time</div>
+              </div>
 
-          <div className="h-64 flex items-end gap-1">
-            {analytics.dailyStats.map((day, i) => {
-              const height = (day.views / maxViews) * 100
-              return (
-                <div
-                  key={day.date}
-                  className="flex-1 flex flex-col items-center group"
-                >
-                  <div className="relative w-full">
-                    <div
-                      className="w-full bg-blue-500/80 hover:bg-blue-400 rounded-t transition-colors cursor-pointer"
-                      style={{ height: `${Math.max(height, 2)}%`, minHeight: '2px' }}
-                    />
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                      <div className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs whitespace-nowrap shadow-xl">
-                        <div className="font-medium">{formatDate(day.date)}</div>
-                        <div className="text-zinc-400">{day.views} views</div>
-                        <div className="text-zinc-400">{day.uniqueVisitors} visitors</div>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Show date label for every 7th day or first/last */}
-                  {(i === 0 || i === analytics.dailyStats.length - 1 || i % 7 === 0) && (
-                    <div className="text-xs text-zinc-500 mt-2 transform -rotate-45 origin-top-left">
-                      {formatShortDate(day.date)}
-                    </div>
+              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart3 className="w-4 h-4 text-blue-400" />
+                  <span className="text-xs text-zinc-500">Period Views</span>
+                </div>
+                <div className="flex items-end gap-2">
+                  <span className="text-2xl font-bold">
+                    {analytics.summary.views.toLocaleString()}
+                  </span>
+                  {analytics.summary.viewsTrend !== null && (
+                    <span className={`text-sm flex items-center ${
+                      analytics.summary.viewsTrend >= 0 ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {analytics.summary.viewsTrend >= 0 ? (
+                        <ArrowUpRight className="w-3 h-3" />
+                      ) : (
+                        <ArrowDownRight className="w-3 h-3" />
+                      )}
+                      {Math.abs(analytics.summary.viewsTrend)}%
+                    </span>
                   )}
                 </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Bottom Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Referrer Sources */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Globe className="w-5 h-5 text-blue-400" />
-              Traffic Sources
-            </h2>
-
-            {analytics.referrerStats.length === 0 ? (
-              <p className="text-zinc-500 text-sm">No referrer data available yet</p>
-            ) : (
-              <div className="space-y-3">
-                {analytics.referrerStats.map((ref) => {
-                  const percentage = (ref.count / analytics.summary.views) * 100
-                  return (
-                    <div key={ref.source}>
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="text-zinc-300">
-                          {ref.source === 'direct' ? 'Direct / Unknown' : ref.source}
-                        </span>
-                        <span className="text-zinc-500">
-                          {ref.count} ({percentage.toFixed(1)}%)
-                        </span>
-                      </div>
-                      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
               </div>
-            )}
-          </div>
 
-          {/* Geographic Stats */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Globe className="w-5 h-5 text-blue-400" />
-              Top Countries
-            </h2>
-
-            {analytics.geoStats.length === 0 ? (
-              <p className="text-zinc-500 text-sm">No geographic data available yet</p>
-            ) : (
-              <div className="space-y-3">
-                {analytics.geoStats.map((geo) => {
-                  const percentage = (geo.count / analytics.summary.views) * 100
-                  return (
-                    <div key={geo.country}>
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="text-zinc-300">{geo.country}</span>
-                        <span className="text-zinc-500">
-                          {geo.count} ({percentage.toFixed(1)}%)
-                        </span>
-                      </div>
-                      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-violet-500 rounded-full"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
+              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-4 h-4 text-violet-400" />
+                  <span className="text-xs text-zinc-500">Unique Visitors</span>
+                </div>
+                <div className="flex items-end gap-2">
+                  <span className="text-2xl font-bold">
+                    {analytics.summary.uniqueVisitors.toLocaleString()}
+                  </span>
+                  {analytics.summary.visitorsTrend !== null && (
+                    <span className={`text-sm flex items-center ${
+                      analytics.summary.visitorsTrend >= 0 ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {analytics.summary.visitorsTrend >= 0 ? (
+                        <ArrowUpRight className="w-3 h-3" />
+                      ) : (
+                        <ArrowDownRight className="w-3 h-3" />
+                      )}
+                      {Math.abs(analytics.summary.visitorsTrend)}%
+                    </span>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+
+              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-green-400" />
+                  <span className="text-xs text-zinc-500">Avg. Daily</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {analytics.summary.avgViewsPerDay}
+                </div>
+                <div className="text-xs text-zinc-500 mt-1">views/day</div>
+              </div>
+
+              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs text-zinc-500">Avg. Time</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {formatTime(analytics.summary.avgTimeOnPage)}
+                </div>
+                <div className="text-xs text-zinc-500 mt-1">on page</div>
+              </div>
+
+              <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <MousePointer className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs text-zinc-500">Bounce Rate</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {analytics.summary.bounceRate}%
+                </div>
+                <div className="text-xs text-zinc-500 mt-1">
+                  {analytics.summary.bounceRate < 40 ? 'Good' : analytics.summary.bounceRate < 60 ? 'Average' : 'Needs work'}
+                </div>
+              </div>
+            </div>
+
+            {/* Views Chart */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-8">
+              <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-blue-400" />
+                Views Over Time
+              </h2>
+              <div className="pl-10">
+                <LineChart
+                  data={analytics.dailyStats.map(d => ({ date: d.date, value: d.views }))}
+                  height={250}
+                  color="#3B82F6"
+                  showArea={true}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-zinc-500 mt-2 pl-10">
+                <span>{formatShortDate(analytics.dailyStats[0]?.date)}</span>
+                <span>{formatShortDate(analytics.dailyStats[analytics.dailyStats.length - 1]?.date)}</span>
+              </div>
+            </div>
+
+            {/* Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Traffic Sources */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-blue-400" />
+                  Traffic Sources
+                </h2>
+                <BarChart
+                  data={analytics.referrerStats.map(r => ({
+                    label: r.source === 'direct' ? 'Direct' : r.source,
+                    value: r.count,
+                    color: r.source === 'direct' ? '#6B7280' : '#3B82F6',
+                  }))}
+                  orientation="horizontal"
+                />
+              </div>
+
+              {/* Geographic Stats */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-violet-400" />
+                  Top Countries
+                </h2>
+                <WorldMapChart data={analytics.geoStats} />
+              </div>
+            </div>
+
+            {/* Hourly Distribution */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-amber-400" />
+                Traffic by Hour
+              </h2>
+              <HourlyHeatmap data={analytics.hourlyStats} />
+            </div>
+          </>
+        )}
+
+        {activeTab === 'engagement' && (
+          <>
+            {/* Engagement Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <StatCard
+                label="Engagement Rate"
+                value={`${analytics.engagementStats.engagementRate}%`}
+                icon={<MousePointer className="w-4 h-4" />}
+              />
+              <StatCard
+                label="Bounce Rate"
+                value={`${analytics.engagementStats.bounceRate}%`}
+                icon={<TrendingDown className="w-4 h-4" />}
+              />
+              <StatCard
+                label="Avg. Time on Page"
+                value={formatTime(analytics.engagementStats.avgTimeOnPage)}
+                icon={<Clock className="w-4 h-4" />}
+              />
+              <StatCard
+                label="Avg. Scroll Depth"
+                value={`${analytics.engagementStats.avgScrollDepth}%`}
+                icon={<BarChart3 className="w-4 h-4" />}
+              />
+            </div>
+
+            {/* Funnel */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-8">
+              <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-green-400" />
+                Conversion Funnel
+                <span className="text-sm font-normal text-zinc-500 ml-2">
+                  {analytics.funnelStats.conversionRate}% conversion rate
+                </span>
+              </h2>
+              <FunnelChart data={analytics.funnelStats.steps} />
+            </div>
+
+            {/* Engagement Breakdown */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-4">Engagement Metrics</h2>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-zinc-400">Engaged Views</span>
+                      <span className="text-white">{analytics.engagementStats.engagedViews}</span>
+                    </div>
+                    <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-green-500 rounded-full"
+                        style={{
+                          width: `${(analytics.engagementStats.engagedViews / analytics.engagementStats.totalViews) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-zinc-400">Scroll Depth</span>
+                      <span className="text-white">{analytics.engagementStats.avgScrollDepth}%</span>
+                    </div>
+                    <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full"
+                        style={{ width: `${analytics.engagementStats.avgScrollDepth}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-4">Performance Tips</h2>
+                <ul className="space-y-3 text-sm">
+                  {analytics.engagementStats.bounceRate > 50 && (
+                    <li className="flex items-start gap-2 text-amber-400">
+                      <span className="mt-1">•</span>
+                      High bounce rate - consider improving your opening content
+                    </li>
+                  )}
+                  {analytics.engagementStats.avgScrollDepth < 50 && (
+                    <li className="flex items-start gap-2 text-amber-400">
+                      <span className="mt-1">•</span>
+                      Low scroll depth - add engaging content or visuals
+                    </li>
+                  )}
+                  {analytics.engagementStats.avgTimeOnPage < 60 && (
+                    <li className="flex items-start gap-2 text-amber-400">
+                      <span className="mt-1">•</span>
+                      Short time on page - ensure content matches visitor expectations
+                    </li>
+                  )}
+                  {analytics.engagementStats.bounceRate <= 50 &&
+                    analytics.engagementStats.avgScrollDepth >= 50 &&
+                    analytics.engagementStats.avgTimeOnPage >= 60 && (
+                    <li className="flex items-start gap-2 text-green-400">
+                      <span className="mt-1">•</span>
+                      Great engagement metrics! Your content is performing well
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'audience' && (
+          <>
+            {/* Device & Browser */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Devices */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                  <Monitor className="w-5 h-5 text-blue-400" />
+                  Devices
+                </h2>
+                <DonutChart
+                  data={analytics.deviceStats.map(d => ({
+                    label: d.device,
+                    value: d.count,
+                    color: d.device === 'Desktop' ? '#3B82F6' :
+                           d.device === 'Mobile' ? '#8B5CF6' :
+                           '#10B981',
+                  }))}
+                />
+              </div>
+
+              {/* Browsers */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-violet-400" />
+                  Browsers
+                </h2>
+                <BarChart
+                  data={analytics.browserStats.map(b => ({
+                    label: b.browser,
+                    value: b.count,
+                    color: '#8B5CF6',
+                  }))}
+                  orientation="horizontal"
+                />
+              </div>
+            </div>
+
+            {/* Geographic Distribution */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-8">
+              <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-cyan-400" />
+                Geographic Distribution
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <h3 className="text-sm font-medium text-zinc-400 mb-4">Top Countries</h3>
+                  <WorldMapChart data={analytics.geoStats} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-zinc-400 mb-4">Distribution</h3>
+                  <DonutChart
+                    data={analytics.geoStats.slice(0, 5).map((g, i) => ({
+                      label: g.country,
+                      value: g.count,
+                      color: ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'][i],
+                    }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Traffic Sources Detail */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <ExternalLink className="w-5 h-5 text-green-400" />
+                Traffic Sources
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-zinc-800">
+                      <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider py-3">
+                        Source
+                      </th>
+                      <th className="text-right text-xs font-medium text-zinc-500 uppercase tracking-wider py-3">
+                        Visitors
+                      </th>
+                      <th className="text-right text-xs font-medium text-zinc-500 uppercase tracking-wider py-3">
+                        Share
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.referrerStats.map((ref) => (
+                      <tr key={ref.source} className="border-b border-zinc-800/50">
+                        <td className="py-3">
+                          <span className="text-white">
+                            {ref.source === 'direct' ? 'Direct / Unknown' : ref.source}
+                          </span>
+                        </td>
+                        <td className="py-3 text-right text-zinc-400">
+                          {ref.count.toLocaleString()}
+                        </td>
+                        <td className="py-3 text-right">
+                          <span className="text-zinc-400">
+                            {((ref.count / analytics.summary.views) * 100).toFixed(1)}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
   )
 }
 
-function SummaryCard({
-  icon: Icon,
-  label,
-  value,
-  subtext,
-}: {
-  icon: typeof Eye
-  label: string
-  value: string
-  subtext: string
-}) {
-  return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="p-2 bg-blue-500/10 rounded-lg">
-          <Icon className="w-5 h-5 text-blue-400" />
-        </div>
-        <span className="text-sm text-zinc-400">{label}</span>
-      </div>
-      <div className="text-2xl font-semibold">{value}</div>
-      <div className="text-xs text-zinc-500 mt-1">{subtext}</div>
-    </div>
-  )
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  })
-}
-
-function formatShortDate(dateStr: string): string {
+function formatShortDate(dateStr: string | undefined): string {
+  if (!dateStr) return ''
   const date = new Date(dateStr)
   return date.toLocaleDateString('en-US', {
     month: 'short',
