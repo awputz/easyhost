@@ -292,7 +292,7 @@ export default function WebhookLogsPage({
           </div>
         ) : logs.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl border border-navy-100">
-            <Webhook className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
+            <Webhook className="w-12 h-12 text-navy-300 mx-auto mb-3" />
             <p className="text-navy-500">No webhook deliveries yet</p>
             <p className="text-sm text-navy-500 mt-1">
               Webhook events will appear here when triggered

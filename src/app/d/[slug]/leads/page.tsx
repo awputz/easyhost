@@ -322,7 +322,7 @@ export default function LeadsPage({
                         </td>
                         <td className="px-4 py-4">
                           {lead.company ? (
-                            <div className="flex items-center gap-2 text-zinc-300">
+                            <div className="flex items-center gap-2 text-navy-600">
                               <Building2 className="w-4 h-4 text-navy-400" />
                               {lead.company}
                             </div>
