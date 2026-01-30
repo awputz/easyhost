@@ -1,10 +1,14 @@
 @import "tailwindcss";
 
-/* Pagelink - Premium Simplicity Design System */
-/* The elegance of a Swiss bank meets the simplicity of Apple */
+/* ============================================
+   PAGELINK DESIGN SYSTEM
+   Brand Guidelines v1.0 - 2025
+   ============================================ */
 
 :root {
-  /* Primary Navy - The hero color */
+  /* ============================================
+     PRIMARY PALETTE - Navy
+     ============================================ */
   --navy-50: #f0f4f8;
   --navy-100: #d9e2ec;
   --navy-200: #bcccdc;
@@ -17,14 +21,33 @@
   --navy-900: #1e3a5f;
   --navy-950: #102a43;
 
-  /* Warm Cream Backgrounds */
+  /* ============================================
+     ACCENT PALETTE - Blue
+     ============================================ */
+  --blue: #3b82f6;
+  --blue-hover: #2563eb;
+  --blue-light: #eff6ff;
+
+  /* ============================================
+     NEUTRAL PALETTE - Cream
+     ============================================ */
   --cream-50: #FDFCFB;
   --cream-100: #FAF9F7;
   --cream-200: #F5F4F2;
   --cream-300: #EEEDE9;
   --cream-400: #E8E6E3;
 
-  /* Semantic mappings */
+  /* ============================================
+     TEXT COLORS
+     ============================================ */
+  --text-primary: #1a1a1a;
+  --text-secondary: #52525b;
+  --text-tertiary: #a1a1aa;
+  --text-inverse: #ffffff;
+
+  /* ============================================
+     SEMANTIC MAPPINGS
+     ============================================ */
   --background: var(--cream-100);
   --background-elevated: #FFFFFF;
   --background-subtle: var(--cream-200);
@@ -53,42 +76,59 @@
   --primary-hover: var(--navy-800);
   --primary-foreground: #FFFFFF;
 
-  /* Secondary */
-  --secondary: var(--cream-200);
-  --secondary-foreground: var(--navy-900);
+  /* Secondary (Blue Accent) */
+  --secondary: var(--blue);
+  --secondary-hover: var(--blue-hover);
+  --secondary-foreground: #FFFFFF;
 
   /* Muted */
   --muted: var(--cream-200);
   --muted-foreground: var(--navy-500);
 
   /* Destructive */
-  --destructive: #DC2626;
+  --destructive: #ef4444;
   --destructive-foreground: #FFFFFF;
 
   /* Success */
-  --success: #16A34A;
+  --success: #22c55e;
   --success-foreground: #FFFFFF;
 
   /* Warning */
-  --warning: #D97706;
+  --warning: #f59e0b;
   --warning-foreground: #FFFFFF;
 
   /* Ring */
-  --ring: var(--navy-400);
+  --ring: var(--blue);
 
-  /* Radius */
+  /* ============================================
+     BORDER RADIUS (Brand Guidelines)
+     ============================================ */
   --radius: 0.75rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
+  --radius-sm: 0.5rem;    /* 8px - buttons, inputs */
+  --radius-md: 0.75rem;   /* 12px - cards */
+  --radius-lg: 1rem;      /* 16px - panels */
+  --radius-xl: 1.5rem;    /* 24px - modals */
   --radius-full: 9999px;
 
-  /* Shadows - subtle depth */
-  --shadow-sm: 0 1px 2px rgba(30, 58, 95, 0.04);
-  --shadow-md: 0 2px 8px rgba(30, 58, 95, 0.06);
-  --shadow-lg: 0 4px 16px rgba(30, 58, 95, 0.08);
-  --shadow-xl: 0 8px 32px rgba(30, 58, 95, 0.10);
+  /* ============================================
+     SHADOWS (Brand Guidelines)
+     ============================================ */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.12);
+
+  /* ============================================
+     SPACING (Brand Guidelines)
+     ============================================ */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
 
   /* Sidebar */
   --sidebar: #FFFFFF;
@@ -96,7 +136,7 @@
   --sidebar-border: var(--cream-300);
   --sidebar-accent: var(--navy-900);
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-ring: var(--navy-400);
+  --sidebar-ring: var(--blue);
 }
 
 @theme inline {
@@ -126,10 +166,19 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Font families - premium system stack */
-  --font-serif: Georgia, 'Times New Roman', serif;
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  /* ============================================
+     TYPOGRAPHY (Brand Guidelines)
+     Cormorant Garamond - Display/Headlines
+     Libre Franklin - Body/UI
+     IBM Plex Mono - Labels/Code
+     ============================================ */
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Libre Franklin', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  /* Legacy aliases */
+  --font-serif: var(--font-display);
+  --font-sans: var(--font-body);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -137,7 +186,10 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Smooth scrolling */
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
 html {
   scroll-behavior: smooth;
 }
@@ -149,16 +201,17 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Premium Typography */
+/* Premium Typography - Headlines use display font */
 h1, h2, h3, h4 {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-weight: 500;
   color: var(--navy-900);
+  letter-spacing: -0.02em;
 }
 
 /* Smooth transitions on interactive elements */
@@ -166,7 +219,10 @@ button, a, input, textarea, select {
   transition: all 200ms ease;
 }
 
-/* Clean scrollbar */
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -185,96 +241,125 @@ button, a, input, textarea, select {
   background: var(--navy-200);
 }
 
-/* Focus styles */
+/* ============================================
+   FOCUS STYLES
+   ============================================ */
+
 *:focus {
   outline: none;
 }
 
 *:focus-visible {
-  outline: 2px solid var(--navy-400);
+  outline: 2px solid var(--blue);
   outline-offset: 2px;
 }
 
-/* Selection */
+/* ============================================
+   SELECTION
+   ============================================ */
+
 ::selection {
   background: var(--navy-900);
   color: white;
 }
 
-/* Typography Classes */
-.font-serif {
-  font-family: var(--font-serif);
+/* ============================================
+   TYPOGRAPHY UTILITIES
+   ============================================ */
+
+.font-display {
+  font-family: var(--font-display);
 }
 
-.font-sans {
-  font-family: var(--font-sans);
+.font-body {
+  font-family: var(--font-body);
 }
 
 .font-mono {
   font-family: var(--font-mono);
 }
 
+/* Legacy aliases */
+.font-serif {
+  font-family: var(--font-display);
+}
+
+.font-sans {
+  font-family: var(--font-body);
+}
+
 /* Display typography */
 .text-display-1 {
+  font-family: var(--font-display);
   font-size: clamp(3rem, 6vw, 4.5rem);
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
 
 .text-display-2 {
+  font-family: var(--font-display);
   font-size: clamp(2.5rem, 5vw, 3.5rem);
   line-height: 1.15;
   letter-spacing: -0.02em;
 }
 
 .text-heading-1 {
+  font-family: var(--font-display);
   font-size: clamp(2rem, 4vw, 2.5rem);
   line-height: 1.2;
   letter-spacing: -0.01em;
 }
 
 .text-heading-2 {
+  font-family: var(--font-display);
   font-size: clamp(1.5rem, 3vw, 2rem);
   line-height: 1.25;
   letter-spacing: -0.01em;
 }
 
 .text-heading-3 {
+  font-family: var(--font-display);
   font-size: 1.5rem;
   line-height: 1.3;
 }
 
 .text-body-lg {
+  font-family: var(--font-body);
   font-size: 1.125rem;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 .text-body {
+  font-family: var(--font-body);
   font-size: 1rem;
   line-height: 1.6;
 }
 
 .text-caption {
+  font-family: var(--font-body);
   font-size: 0.875rem;
   line-height: 1.5;
 }
 
 .text-label {
-  font-size: 0.75rem;
-  line-height: 1.4;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
-/* Premium Button Styles */
+/* ============================================
+   BUTTON STYLES (Brand Guidelines)
+   ============================================ */
+
 .btn-primary {
   background: var(--navy-900);
   color: white;
   padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
   font-weight: 500;
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
 }
 
 .btn-primary:hover {
@@ -282,24 +367,24 @@ button, a, input, textarea, select {
 }
 
 .btn-secondary {
-  background: var(--cream-200);
-  color: var(--navy-900);
+  background: var(--blue);
+  color: white;
   padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
   font-weight: 500;
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
 }
 
 .btn-secondary:hover {
-  background: var(--cream-300);
+  background: var(--blue-hover);
 }
 
 .btn-outline {
   background: transparent;
   color: var(--navy-900);
-  border: 2px solid var(--navy-900);
+  border: 1px solid var(--navy-900);
   padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
   font-weight: 500;
 }
 
@@ -308,20 +393,39 @@ button, a, input, textarea, select {
   color: white;
 }
 
-/* Card styles */
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   CARD STYLES
+   ============================================ */
+
 .card {
   background: white;
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--cream-300);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: var(--shadow-sm);
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
-  border-color: var(--cream-400);
+  transform: translateY(-2px);
 }
 
-/* Animation utilities */
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
 .animate-fade-in {
   animation: fadeIn 0.4s ease forwards;
 }
@@ -346,7 +450,10 @@ button, a, input, textarea, select {
   }
 }
 
-/* Navy color utilities */
+/* ============================================
+   NAVY COLOR UTILITIES
+   ============================================ */
+
 .bg-navy-50 { background-color: var(--navy-50); }
 .bg-navy-100 { background-color: var(--navy-100); }
 .bg-navy-200 { background-color: var(--navy-200); }
@@ -376,7 +483,10 @@ button, a, input, textarea, select {
 .border-navy-300 { border-color: var(--navy-300); }
 .border-navy-400 { border-color: var(--navy-400); }
 
-/* Cream color utilities */
+/* ============================================
+   CREAM COLOR UTILITIES
+   ============================================ */
+
 .bg-cream-50 { background-color: var(--cream-50); }
 .bg-cream-100 { background-color: var(--cream-100); }
 .bg-cream-200 { background-color: var(--cream-200); }
@@ -393,33 +503,60 @@ button, a, input, textarea, select {
 .border-cream-300 { border-color: var(--cream-300); }
 .border-cream-400 { border-color: var(--cream-400); }
 
-/* Hover utilities - Navy backgrounds */
+/* ============================================
+   BLUE ACCENT UTILITIES
+   ============================================ */
+
+.bg-blue { background-color: var(--blue); }
+.bg-blue-hover { background-color: var(--blue-hover); }
+.bg-blue-light { background-color: var(--blue-light); }
+
+.text-blue { color: var(--blue); }
+.text-blue-hover { color: var(--blue-hover); }
+
+.border-blue { border-color: var(--blue); }
+.border-blue-light { border-color: var(--blue-light); }
+
+.hover\:bg-blue:hover { background-color: var(--blue); }
+.hover\:bg-blue-hover:hover { background-color: var(--blue-hover); }
+.hover\:text-blue:hover { color: var(--blue); }
+
+.ring-blue { --tw-ring-color: var(--blue); }
+.ring-blue-light { --tw-ring-color: var(--blue-light); }
+
+/* ============================================
+   HOVER UTILITIES - Navy
+   ============================================ */
+
 .hover\:bg-navy-50:hover { background-color: var(--navy-50); }
 .hover\:bg-navy-100:hover { background-color: var(--navy-100); }
 .hover\:bg-navy-200:hover { background-color: var(--navy-200); }
 .hover\:bg-navy-700:hover { background-color: var(--navy-700); }
 .hover\:bg-navy-800:hover { background-color: var(--navy-800); }
 
-/* Hover utilities - Cream backgrounds */
 .hover\:bg-cream-200:hover { background-color: var(--cream-200); }
 .hover\:bg-cream-300:hover { background-color: var(--cream-300); }
 
-/* Hover utilities - Navy text */
 .hover\:text-navy-600:hover { color: var(--navy-600); }
 .hover\:text-navy-700:hover { color: var(--navy-700); }
 .hover\:text-navy-800:hover { color: var(--navy-800); }
 .hover\:text-navy-900:hover { color: var(--navy-900); }
 
-/* Hover utilities - Navy borders */
 .hover\:border-navy-200:hover { border-color: var(--navy-200); }
 .hover\:border-navy-300:hover { border-color: var(--navy-300); }
 
-/* Disabled utilities */
+/* ============================================
+   DISABLED UTILITIES
+   ============================================ */
+
 .disabled\:bg-navy-200:disabled { background-color: var(--navy-200); }
 .disabled\:bg-navy-300:disabled { background-color: var(--navy-300); }
 .disabled\:text-navy-400:disabled { color: var(--navy-400); }
 
-/* Group hover utilities */
+/* ============================================
+   GROUP HOVER UTILITIES
+   ============================================ */
+
 .group:hover .group-hover\:bg-navy-900 { background-color: var(--navy-900); }
 .group:hover .group-hover\:bg-navy-800 { background-color: var(--navy-800); }
 .group:hover .group-hover\:text-white { color: white; }
@@ -429,3 +566,12 @@ button, a, input, textarea, select {
 .group:hover .group-hover\:text-navy-300 { color: var(--navy-300); }
 .group:hover .group-hover\:translate-x-0\.5 { transform: translateX(0.125rem); }
 .group:hover .group-hover\:translate-x-1 { transform: translateX(0.25rem); }
+
+/* ============================================
+   TEXT COLOR SEMANTIC UTILITIES
+   ============================================ */
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-inverse { color: var(--text-inverse); }
