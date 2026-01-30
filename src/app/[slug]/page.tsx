@@ -58,6 +58,29 @@ interface FeedbackConfigData {
   position: 'bottom-right' | 'bottom-left' | 'bottom-center'
 }
 
+interface ABVariantData {
+  id: string
+  name: string
+  html: string
+  trafficPercent: number
+  views: number
+  conversions: number
+  conversionRate: number
+}
+
+interface ABTestConfigData {
+  enabled: boolean
+  testName: string
+  variants: ABVariantData[]
+  goalType: 'clicks' | 'time_on_page' | 'scroll_depth' | 'custom'
+  goalSelector?: string
+  minSampleSize: number
+  confidenceLevel: number
+  winnerId?: string | null
+  startedAt?: string | null
+  endedAt?: string | null
+}
+
 interface DocumentData {
   id: string
   slug: string
@@ -74,6 +97,7 @@ interface DocumentData {
   seo: SEOData | null
   lead_capture: LeadCaptureData | null
   feedback_config: FeedbackConfigData | null
+  ab_test_config: ABTestConfigData | null
 }
 
 interface DocumentAccessResult {
@@ -100,7 +124,7 @@ async function getDocumentAccess(slug: string): Promise<DocumentAccessResult> {
 
   const { data: doc, error } = await supabase
     .from('pagelink_documents')
-    .select('id, slug, title, html, theme, custom_branding, is_public, show_pagelink_badge, view_count, password_hash, expires_at, allowed_emails, seo, lead_capture, feedback_config')
+    .select('id, slug, title, html, theme, custom_branding, is_public, show_pagelink_badge, view_count, password_hash, expires_at, allowed_emails, seo, lead_capture, feedback_config, ab_test_config')
     .eq('slug', slug)
     .single()
 
@@ -161,6 +185,7 @@ function getDemoDocument(slug: string): DocumentData | null {
       seo: null,
       lead_capture: null,
       feedback_config: null,
+      ab_test_config: null,
     }
   }
   return null
@@ -283,6 +308,7 @@ export default async function PublicDocumentPage({
         branding={result.document.custom_branding}
         leadCapture={result.document.lead_capture}
         feedbackConfig={result.document.feedback_config}
+        abTestConfig={result.document.ab_test_config}
       />
     )
   }
@@ -300,6 +326,7 @@ export default async function PublicDocumentPage({
       branding={doc.custom_branding}
       leadCapture={doc.lead_capture}
       feedbackConfig={doc.feedback_config}
+      abTestConfig={doc.ab_test_config}
     />
   )
 }
