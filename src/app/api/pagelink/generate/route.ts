@@ -1,122 +1,143 @@
 import { NextRequest } from 'next/server'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { CRE_THEMES, getThemeCSS } from '@/lib/cre-themes'
+import { PropertyData } from '@/services/nyc-property'
 
 const anthropic = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null
 
-const SYSTEM_PROMPT = `You are Pagelink's document creation AI. Your job is to create beautiful, professional web documents based on user requests.
+type DocumentType = 'offering_memorandum' | 'tear_sheet' | 'leasing_flyer' | 'one_pager'
+
+interface GenerateRequest {
+  message: string
+  documentId?: string
+  existingHtml?: string
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
+  documentType?: DocumentType
+  theme?: string
+  propertyData?: PropertyData | null
+}
+
+const SYSTEM_PROMPT = `You are PageLink's CRE (Commercial Real Estate) document creation AI. You create beautiful, institutional-quality marketing documents for NYC properties.
 
 ## Your Capabilities
 
-1. **Create Documents** - Generate complete HTML documents with inline CSS
-2. **Edit Documents** - Modify existing documents based on feedback
-3. **Fetch Data** - For NYC real estate, you can fetch data from public APIs
-4. **Answer Questions** - Help users understand what's possible
+1. **Create CRE Documents** - Generate complete HTML documents with the provided theme
+2. **Use Real Property Data** - When property data is provided, use those exact figures
+3. **Edit Documents** - Modify existing documents based on feedback
+4. **Professional Tone** - Write like a top NYC brokerage (CBRE, JLL, Cushman & Wakefield)
 
 ## Design System
 
 ### Typography
-Use Google Fonts with these combinations:
-- Headlines: Playfair Display (weight 300, 400)
-- Stats/Numbers: Gotham fallback stack (Gotham, Century Gothic, Poppins, sans-serif)
-- Body: Inter (weights 300, 400, 500, 600)
+- **Headlines:** Cormorant Garamond or Playfair Display (weights 300, 400) - elegant serif
+- **Stats/Numbers:** IBM Plex Mono or Poppins (monospace feel for credibility)
+- **Body:** Libre Franklin or Inter (clean, professional sans-serif)
 
-### Color Themes
-
-**Midnight Navy (Default for Real Estate)**
-\`\`\`css
-:root {
-  --midnight: #0a1628;
-  --navy: #1a2d4a;
-  --steel: #2d4263;
-  --gold: #c9a962;
-  --pearl: #c4d0e4;
-  --ivory: #f0f4f8;
-}
-\`\`\`
-
-**Charcoal (Modern/Tech)**
-\`\`\`css
-:root {
-  --primary: #2C2C2C;
-  --accent: #3A3A3A;
-  --text: #FFFFFF;
-  --stat-bg: rgba(255,255,255,0.95);
-  --stat-text: #1A1A1A;
-}
-\`\`\`
-
-**Slate (Corporate/Professional)**
-\`\`\`css
-:root {
-  --primary: #3D4F5F;
-  --accent: #2D3F4F;
-  --text: #F5F5F5;
-}
-\`\`\`
+### Using the Theme
+The user has selected a theme. Use the CSS variables provided in the context:
+- \`var(--primary)\` - Main brand color
+- \`var(--accent)\` - Highlight/gold accent color
+- \`var(--background)\` - Page background
+- \`var(--text)\` - Primary text color
+- \`var(--text-secondary)\` - Secondary text
+Always include the theme CSS in your output.
 
 ### Component Patterns
 
-**Stat Box:**
+**Stat Box (for key metrics):**
 \`\`\`html
-<div style="background: rgba(255,255,255,0.95); padding: 24px; border-radius: 8px; text-align: center;">
-  <div style="font-family: 'Poppins', 'Century Gothic', sans-serif; font-size: 32px; font-weight: 500; color: #1a1a1a;">$12,500,000</div>
-  <div style="font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; margin-top: 8px;">Asking Price</div>
+<div class="stat-box">
+  <div class="stat-value">$12,500,000</div>
+  <div class="stat-label">Asking Price</div>
 </div>
 \`\`\`
 
-**Section Header:**
+**Section Header (with gold bar):**
 \`\`\`html
-<div style="margin-bottom: 32px;">
-  <div style="width: 40px; height: 3px; background: #c9a962; margin-bottom: 16px;"></div>
-  <h2 style="font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 400; margin: 0;">Investment Highlights</h2>
+<div class="section-header">
+  <h2>Investment Highlights</h2>
 </div>
 \`\`\`
 
 **Data Table:**
 \`\`\`html
-<table style="width: 100%; border-collapse: collapse;">
-  <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-    <td style="padding: 12px 0; color: rgba(255,255,255,0.6);">Address</td>
-    <td style="padding: 12px 0; text-align: right;">146 West 28th Street</td>
+<table class="data-table">
+  <tr>
+    <td class="label">Address</td>
+    <td class="value">146 West 28th Street</td>
   </tr>
 </table>
 \`\`\`
 
 **Status Badge:**
 \`\`\`html
-<span style="display: inline-block; padding: 4px 10px; border-radius: 3px; font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background: rgba(201, 169, 98, 0.15); color: #c9a962;">Free Market</span>
+<span class="badge">Free Market</span>
 \`\`\`
 
-**Metric Grid:**
+**Grid Layout:**
 \`\`\`html
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-  <!-- Stat boxes here -->
+<div class="grid grid-4">
+  <!-- 4 equal columns -->
 </div>
 \`\`\`
 
-## Document Types
+## CRE Document Types
 
-### 1. Investment Memorandum (Real Estate)
-Structure: Cover → Key Metrics → Property Overview → Investment Highlights → Rent Roll → Income & Expenses → Tax & Zoning → Building Details → Neighborhood → Legal → Team Contact → Back Cover
+### Offering Memorandum
+Multi-page investment package:
+1. **Cover** - Property image, address, "Exclusive Offering" badge
+2. **Investment Summary** - Key metrics grid (Price, Cap Rate, NOI, $/SF)
+3. **Property Overview** - Address, type, size, year built, zoning
+4. **Investment Highlights** - 5-7 bullet points with gold markers
+5. **Rent Roll** - Tenant table with unit, SF, rent/SF, annual rent
+6. **Financial Analysis** - Income, expenses, NOI breakdown
+7. **Tax & Zoning** - Tax class, assessed value, zoning district, FAR, air rights
+8. **Building Details** - Systems, recent improvements, condition
+9. **Location Analysis** - Neighborhood, transit, Walk Score, demographics
+10. **Contact** - Broker information
 
-### 2. Pitch Deck
-Structure: Title → Problem → Solution → Market Size → Product → Business Model → Traction → Team → Financials → The Ask
+### Tear Sheet
+One-page summary:
+- Hero section with property image and address
+- 4 key stats in a row
+- Brief highlights (3-4 bullets)
+- Mini rent roll or tenant summary
+- Contact info
 
-### 3. Consulting Proposal
-Structure: Cover → Executive Summary → Understanding → Approach → Timeline → Team → Investment → Terms → Next Steps
+### Leasing Flyer
+Marketing for available space:
+- Available space details
+- Asking rent and terms
+- Building amenities
+- Floor plans (placeholder)
+- Neighborhood highlights
+- Broker contact
 
-### 4. One-Pager
-Structure: Hero with value prop → Key stats → Features/Benefits → Social proof → CTA
+### One Pager
+Quick overview:
+- Property photo and address
+- 4 key metrics
+- 3 investment highlights
+- Contact
 
-### 5. Investor Update
-Structure: Header → Highlights → KPIs → Progress → Challenges → Ask → Timeline
+## Important Rules
+
+1. **Always output complete HTML** with the theme CSS embedded
+2. **Use real property data** when provided - never make up numbers
+3. **Format currency** with commas ($1,000,000)
+4. **Format percentages** to two decimals (5.07%)
+5. **Format square feet** with commas (16,000 SF)
+6. **Professional language** - confident, factual, no superlatives
+7. **Responsive design** - works on mobile and desktop
+8. **Print-ready** - include @media print styles
+9. **Semantic HTML** - use section, article, header, footer
 
 ## Output Format
 
-When generating a document, output the complete HTML:
+Always wrap your document like this:
 
 \`\`\`html
 <!DOCTYPE html>
@@ -124,56 +145,40 @@ When generating a document, output the complete HTML:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>[Document Title]</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@300;400&family=Inter:wght@300;400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>[Property Address] - [Document Type]</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Libre+Franklin:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@300;400&family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; }
-    /* All CSS inline */
+    /* Include the theme CSS provided */
+    /* Then your document-specific styles */
   </style>
 </head>
 <body>
-  <!-- Document content -->
+  <!-- Document sections -->
 </body>
 </html>
 \`\`\`
 
-## Important Rules
+## When Editing
 
-1. Always generate complete, self-contained HTML files
-2. Use inline styles and embedded CSS (no external CSS except Google Fonts)
-3. Make all documents responsive (mobile-friendly)
-4. Include print styles for documents that might be printed
-5. Use professional, confident language - no fluff or superlatives
-6. Format currency with commas ($1,000,000)
-7. Percentages to two decimal places (5.07%)
-8. Never use dashes in professional copy (use commas instead)
-9. Use semantic HTML5 elements (section, article, header, footer)
-10. Add accessibility attributes where needed
+When asked to modify a document:
+1. Acknowledge the change briefly
+2. Output the COMPLETE updated HTML
+3. Use the same theme and styling
 
-## Responding to Edits
-
-When the user asks to modify the document:
-1. Acknowledge what you're changing
-2. Output the COMPLETE updated HTML (not just the changed section)
-3. Confirm what was changed
-
-Remember: You're helping create documents that replace PDFs. They should be beautiful, professional, and instantly shareable.`
+Remember: You're creating documents that compete with PDFs from top brokerages. Quality matters.`
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json() as GenerateRequest
     const {
       message,
       documentId,
       existingHtml = '',
       conversationHistory = [],
-    } = body as {
-      message: string
-      documentId?: string
-      existingHtml?: string
-      conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
-    }
+      documentType = 'offering_memorandum',
+      theme = 'navy',
+      propertyData = null,
+    } = body
 
     if (!message) {
       return new Response(JSON.stringify({ error: 'Message is required' }), {
@@ -203,15 +208,68 @@ export async function POST(request: NextRequest) {
     }
 
     // Build context for Claude
+    const selectedTheme = CRE_THEMES[theme] || CRE_THEMES.navy
+    const themeCSS = getThemeCSS(theme)
+
+    // Document type descriptions
+    const docTypeDescriptions: Record<DocumentType, string> = {
+      offering_memorandum: 'A comprehensive investment package with cover, key metrics, property overview, investment highlights, rent roll, income & expenses, tax & zoning, building details, neighborhood analysis, and contact information.',
+      tear_sheet: 'A concise one-page property summary with key stats, highlights, and contact info.',
+      leasing_flyer: 'Marketing material focused on available space, amenities, and leasing terms.',
+      one_pager: 'A quick overview highlighting the most important property details.',
+    }
+
+    // Build property context if available
+    let propertyContext = ''
+    if (propertyData) {
+      propertyContext = `
+## Property Data (from NYC Open Data)
+- **Address:** ${propertyData.address}, ${propertyData.borough}, NY ${propertyData.zipCode}
+- **BBL:** ${propertyData.bbl} (Block: ${propertyData.block}, Lot: ${propertyData.lot})
+- **Building Area:** ${propertyData.buildingArea.toLocaleString()} SF
+- **Lot Area:** ${propertyData.lotArea.toLocaleString()} SF (${propertyData.lotFrontage}' x ${propertyData.lotDepth}')
+- **Floors:** ${propertyData.numFloors}
+- **Total Units:** ${propertyData.unitsTotal} (${propertyData.unitsResidential} residential)
+- **Year Built:** ${propertyData.yearBuilt}
+- **Building Class:** ${propertyData.buildingClass}
+- **Zoning:** ${propertyData.zoningDistrict}
+- **FAR:** Residential ${propertyData.residentialFar}, Commercial ${propertyData.commercialFar}, Built ${propertyData.builtFar}
+- **Air Rights:** ${propertyData.airRights.toLocaleString()} SF available
+${propertyData.walkScore ? `- **Walk Score:** ${propertyData.walkScore}` : ''}
+${propertyData.transitScore ? `- **Transit Score:** ${propertyData.transitScore}` : ''}
+${propertyData.medianIncome ? `- **Median Income (Area):** $${propertyData.medianIncome.toLocaleString()}` : ''}
+${propertyData.medianRent ? `- **Median Rent (Area):** $${propertyData.medianRent.toLocaleString()}` : ''}
+- **Coordinates:** ${propertyData.latitude}, ${propertyData.longitude}
+
+Use this real property data to create accurate, data-driven content. Do not make up numbers—use these exact figures.
+`
+    }
+
     const contextMessage = existingHtml
       ? `Current document HTML:\n\`\`\`html\n${existingHtml.slice(0, 2000)}...\n\`\`\`\n\nUser wants to modify/update this document.`
       : 'User wants to create a new document.'
+
+    const fullContext = `## Document Settings
+- **Document Type:** ${documentType.replace(/_/g, ' ')} - ${docTypeDescriptions[documentType]}
+- **Theme:** ${selectedTheme.name} (${selectedTheme.description})
+- **Theme Colors:** Primary: ${selectedTheme.primary}, Accent: ${selectedTheme.accent}, Background: ${selectedTheme.background}
+- **Dark Mode:** ${selectedTheme.isDark ? 'Yes' : 'No'}
+
+${propertyContext}
+## Theme CSS (use these CSS variables)
+\`\`\`css
+${themeCSS.slice(0, 1500)}
+\`\`\`
+
+${contextMessage}
+
+User request: ${message}`
 
     const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
       ...conversationHistory.slice(-6), // Keep last 6 messages for context
       {
         role: 'user' as const,
-        content: `${contextMessage}\n\nUser request: ${message}`,
+        content: fullContext,
       },
     ]
 
