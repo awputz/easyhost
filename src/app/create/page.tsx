@@ -48,7 +48,7 @@ import { ChatPanel } from '@/components/pagelink/chat-panel'
 import { PreviewPanel } from '@/components/pagelink/preview-panel'
 import { CRE_THEMES, getThemeSwatches } from '@/lib/cre-themes'
 import { extractNYCAddress, fetchPLUTOData, type PropertyData } from '@/services/nyc-property'
-import { PageChat, PageTheme } from '@/types'
+import { PageChat } from '@/types'
 import {
   ArrowLeft,
   Settings2,
@@ -65,6 +65,35 @@ import {
 } from 'lucide-react'
 
 type DocumentType = 'offering_memorandum' | 'tear_sheet' | 'leasing_flyer' | 'one_pager'
+
+// Helper function to extract HTML from AI response
+function extractHtmlFromResponse(response: string): string | null {
+  // Try to extract from markdown code blocks first
+  const codeBlockMatch = response.match(/```html\n([\s\S]*?)```/)
+  if (codeBlockMatch) {
+    return codeBlockMatch[1].trim()
+  }
+
+  // Try to extract a complete HTML document
+  const docMatch = response.match(/<!DOCTYPE html[\s\S]*?<\/html>/i)
+  if (docMatch) {
+    return docMatch[0].trim()
+  }
+
+  // Try to extract partial HTML that starts with <!DOCTYPE but might not have closing tag yet
+  const partialDocMatch = response.match(/<!DOCTYPE html[\s\S]*/i)
+  if (partialDocMatch && partialDocMatch[0].includes('<body')) {
+    return partialDocMatch[0].trim()
+  }
+
+  // Try to find just an HTML document structure
+  const htmlTagMatch = response.match(/<html[\s\S]*?<\/html>/i)
+  if (htmlTagMatch) {
+    return '<!DOCTYPE html>\n' + htmlTagMatch[0].trim()
+  }
+
+  return null
+}
 
 const DOCUMENT_TYPES = [
   {
@@ -99,7 +128,6 @@ export default function CreatePage() {
   const [messages, setMessages] = useState<PageChat[]>([])
   const [html, setHtml] = useState('')
   const [title, setTitle] = useState('Untitled Document')
-  const [theme, setTheme] = useState<PageTheme>('professional-dark')
   const [creTheme, setCreTheme] = useState('navy')
   const [documentType, setDocumentType] = useState<DocumentType>('offering_memorandum')
   const [isPublic, setIsPublic] = useState(true)
@@ -195,13 +223,19 @@ export default function CreatePage() {
               if (data.type === 'content') {
                 fullResponse += data.content
                 setStreamingContent(fullResponse)
+
+                // Try to extract and show HTML in real-time for live preview
+                const liveHtml = extractHtmlFromResponse(fullResponse)
+                if (liveHtml) {
+                  setHtml(liveHtml)
+                }
               } else if (data.type === 'done') {
                 setSlug(data.slug)
-                const htmlMatch = fullResponse.match(/```html\n([\s\S]*?)```/)?.[1] ||
-                                 fullResponse.match(/<!DOCTYPE html[\s\S]*<\/html>/i)?.[0]
-                if (htmlMatch) {
-                  setHtml(htmlMatch)
-                  const titleMatch = htmlMatch.match(/<title>([^<]+)<\/title>/i)
+                // Final extraction with all content
+                const finalHtml = extractHtmlFromResponse(fullResponse)
+                if (finalHtml) {
+                  setHtml(finalHtml)
+                  const titleMatch = finalHtml.match(/<title>([^<]+)<\/title>/i)
                   if (titleMatch) setTitle(titleMatch[1])
                 }
               } else if (data.type === 'error') {
@@ -482,10 +516,11 @@ export default function CreatePage() {
         <div className="w-1/2">
           <PreviewPanel
             html={html}
-            theme={theme}
+            creTheme={creTheme}
             title={title}
             slug={slug}
             isPublic={isPublic}
+            isGenerating={isGenerating}
           />
         </div>
       </div>

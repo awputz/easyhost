@@ -5,7 +5,19 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ChatPanel } from '@/components/pagelink/chat-panel'
 import { PreviewPanel } from '@/components/pagelink/preview-panel'
-import { PageChat, PageTheme, PageTemplateType, Page } from '@/types'
+import { PageChat, PageTemplateType, Page } from '@/types'
+
+// Map legacy themes to CRE themes
+function mapLegacyTheme(theme: string): string {
+  const legacyMap: Record<string, string> = {
+    'professional-dark': 'midnight',
+    'clean-light': 'navy',
+    'corporate-blue': 'slate',
+    'modern-minimal': 'charcoal',
+    'custom': 'navy',
+  }
+  return legacyMap[theme] || theme || 'navy'
+}
 
 export default function EditPagePage({
   params,
@@ -18,7 +30,7 @@ export default function EditPagePage({
   const [loading, setLoading] = useState(true)
   const [title, setTitle] = useState('Untitled Document')
   const [html, setHtml] = useState('')
-  const [theme, setTheme] = useState<PageTheme>('professional-dark')
+  const [creTheme, setCreTheme] = useState('navy')
   const [templateType, setTemplateType] = useState<PageTemplateType | null>(null)
   const [messages, setMessages] = useState<PageChat[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
@@ -40,7 +52,7 @@ export default function EditPagePage({
         setPage(data)
         setTitle(data.title)
         setHtml(data.html)
-        setTheme(data.theme)
+        setCreTheme(mapLegacyTheme(data.theme))
         setTemplateType(data.template_type)
       } else {
         router.push('/dashboard/pages')
@@ -86,7 +98,7 @@ export default function EditPagePage({
           message,
           pageId: id,
           templateType,
-          theme,
+          theme: creTheme,
           existingHtml: html,
           conversationHistory: messages.map(m => ({
             role: m.role,
@@ -162,7 +174,7 @@ export default function EditPagePage({
       setIsGenerating(false)
       setStreamingContent('')
     }
-  }, [id, templateType, theme, html, messages])
+  }, [id, templateType, creTheme, html, messages])
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -174,7 +186,7 @@ export default function EditPagePage({
           id,
           title,
           html,
-          theme,
+          theme: creTheme,
           templateType,
         }),
       })
@@ -272,17 +284,19 @@ export default function EditPagePage({
             <div>
               <label className="text-xs text-navy-400 block mb-1">Theme</label>
               <select
-                value={theme}
+                value={creTheme}
                 onChange={(e) => {
-                  setTheme(e.target.value as PageTheme)
+                  setCreTheme(e.target.value)
                   setHasChanges(true)
                 }}
                 className="bg-white border border-navy-200 text-navy-900 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-navy-200"
               >
-                <option value="professional-dark">Professional Dark</option>
-                <option value="clean-light">Clean Light</option>
-                <option value="corporate-blue">Corporate Blue</option>
-                <option value="modern-minimal">Modern Minimal</option>
+                <option value="navy">Navy</option>
+                <option value="midnight">Midnight</option>
+                <option value="charcoal">Charcoal</option>
+                <option value="slate">Slate</option>
+                <option value="espresso">Espresso</option>
+                <option value="olive">Olive</option>
               </select>
             </div>
             <div>
@@ -343,10 +357,11 @@ export default function EditPagePage({
         <div className="flex-1 bg-cream-100">
           <PreviewPanel
             html={html}
-            theme={theme}
+            creTheme={creTheme}
             title={title}
             slug={page?.slug || null}
             isPublic={page?.is_public ?? true}
+            isGenerating={isGenerating}
           />
         </div>
       </div>
