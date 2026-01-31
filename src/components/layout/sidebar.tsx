@@ -38,13 +38,13 @@ export function Sidebar({ collapsed = false, onCollapse }: SidebarProps) {
       {/* Create Button */}
       <div className={cn('p-4', collapsed && 'p-2')}>
         <Link
-          href="/new"
+          href="/create"
           className={cn(
             'flex items-center justify-center gap-2 bg-navy-800 hover:bg-navy-700 text-cream-50 font-medium transition-all',
             collapsed ? 'w-10 h-10 rounded-lg text-lg' : 'w-full py-2.5 px-4 rounded-lg text-sm'
           )}
         >
-          {collapsed ? '+' : '+ New'}
+          {collapsed ? '+' : '+ New Document'}
         </Link>
       </div>
 

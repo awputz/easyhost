@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   Monitor,
   Tablet,
@@ -12,40 +12,127 @@ import {
   Eye,
   Code,
   Maximize2,
+  Minimize2,
+  FileText,
+  RotateCcw,
+  Sparkles,
+  Building2,
 } from 'lucide-react'
-import { PageTheme } from '@/types'
+import { getThemeCSS, wrapDocumentHTML, CRE_THEMES } from '@/lib/cre-themes'
 
 type ViewMode = 'preview' | 'code'
 type DeviceSize = 'desktop' | 'tablet' | 'mobile'
 
 interface PreviewPanelProps {
   html: string
-  theme: PageTheme
+  creTheme: string
   title: string
   slug: string | null
   isPublic: boolean
+  isGenerating?: boolean
   onToggleFullscreen?: () => void
 }
 
-const DEVICE_WIDTHS: Record<DeviceSize, string> = {
-  desktop: '100%',
-  tablet: '768px',
-  mobile: '375px',
+const DEVICE_CONFIGS: Record<DeviceSize, { width: string; label: string }> = {
+  desktop: { width: '100%', label: 'Desktop' },
+  tablet: { width: '768px', label: 'Tablet' },
+  mobile: { width: '375px', label: 'Mobile' },
 }
+
+// Sample CRE document for preview when empty
+const SAMPLE_CRE_DOCUMENT = `
+<div class="page" style="padding: 64px;">
+  <div style="text-align: center; margin-bottom: 48px;">
+    <span class="badge" style="margin-bottom: 16px;">Sample Preview</span>
+    <h1 style="font-size: 2.5rem; margin-bottom: 8px;">146 West 28th Street</h1>
+    <p style="color: var(--text-secondary); font-size: 1.1rem;">Chelsea, Manhattan</p>
+  </div>
+
+  <div class="grid grid-4" style="margin-bottom: 48px;">
+    <div class="stat-box">
+      <div class="stat-value">$12.5M</div>
+      <div class="stat-label">Asking Price</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">5.07%</div>
+      <div class="stat-label">Cap Rate</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">$634K</div>
+      <div class="stat-label">NOI</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">16,000</div>
+      <div class="stat-label">Square Feet</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h2>Investment Highlights</h2>
+  </div>
+
+  <div class="card">
+    <ul style="list-style: none; padding: 0;">
+      <li style="padding: 12px 0; border-bottom: 1px solid var(--text-tertiary); opacity: 0.3; display: flex; align-items: center; gap: 12px;">
+        <span style="color: var(--accent);">●</span>
+        <span>Prime Chelsea location steps from High Line</span>
+      </li>
+      <li style="padding: 12px 0; border-bottom: 1px solid var(--text-tertiary); opacity: 0.3; display: flex; align-items: center; gap: 12px;">
+        <span style="color: var(--accent);">●</span>
+        <span>100% occupied with established tenants</span>
+      </li>
+      <li style="padding: 12px 0; display: flex; align-items: center; gap: 12px;">
+        <span style="color: var(--accent);">●</span>
+        <span>Significant upside potential on renewal</span>
+      </li>
+    </ul>
+  </div>
+
+  <p style="text-align: center; color: var(--text-tertiary); font-size: 0.875rem; margin-top: 48px;">
+    This is a sample preview. Start chatting to generate your actual document.
+  </p>
+</div>
+`
 
 export function PreviewPanel({
   html,
-  theme,
+  creTheme,
   title,
   slug,
   isPublic,
+  isGenerating,
   onToggleFullscreen,
 }: PreviewPanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('preview')
   const [deviceSize, setDeviceSize] = useState<DeviceSize>('desktop')
   const [copied, setCopied] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showSample, setShowSample] = useState(false)
+  const [iframeKey, setIframeKey] = useState(0)
 
   const publicUrl = slug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/p/${slug}` : null
+
+  // Generate the full HTML for the iframe
+  const iframeContent = useMemo(() => {
+    const contentToRender = showSample ? SAMPLE_CRE_DOCUMENT : html
+
+    if (!contentToRender) return ''
+
+    // If the HTML is already a complete document, use it directly
+    if (contentToRender.includes('<!DOCTYPE') || contentToRender.includes('<html')) {
+      return contentToRender
+    }
+
+    // Otherwise, wrap it with the CRE theme
+    return wrapDocumentHTML(contentToRender, title, creTheme)
+  }, [html, creTheme, title, showSample])
+
+  // Reset sample mode when HTML is generated
+  useEffect(() => {
+    if (html) {
+      setShowSample(false)
+    }
+  }, [html])
 
   const handleCopyLink = async () => {
     if (!publicUrl) return
@@ -55,13 +142,15 @@ export function PreviewPanel({
   }
 
   const handleCopyHtml = async () => {
-    await navigator.clipboard.writeText(html)
+    const contentToCopy = html || (showSample ? wrapDocumentHTML(SAMPLE_CRE_DOCUMENT, title, creTheme) : '')
+    await navigator.clipboard.writeText(contentToCopy)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
   const handleDownloadHtml = () => {
-    const blob = new Blob([getFullHtml(html, theme, title)], { type: 'text/html' })
+    const contentToDownload = html || (showSample ? wrapDocumentHTML(SAMPLE_CRE_DOCUMENT, title, creTheme) : '')
+    const blob = new Blob([contentToDownload], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -70,19 +159,31 @@ export function PreviewPanel({
     URL.revokeObjectURL(url)
   }
 
+  const handleRefresh = () => {
+    setIframeKey(prev => prev + 1)
+  }
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen)
+    onToggleFullscreen?.()
+  }
+
+  const themeData = CRE_THEMES[creTheme] || CRE_THEMES.navy
+  const hasContent = Boolean(html) || showSample
+
   return (
-    <div className="flex flex-col h-full bg-zinc-900">
+    <div className={`flex flex-col h-full bg-navy-900/50 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
       {/* Preview Header */}
-      <div className="flex-shrink-0 px-4 py-2 border-b border-zinc-800 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex-shrink-0 px-4 py-3 border-b border-navy-800/50 flex items-center justify-between bg-navy-900/80 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
           {/* View Mode Toggle */}
-          <div className="flex bg-zinc-800 rounded-lg p-0.5">
+          <div className="flex bg-navy-800/60 rounded-lg p-1">
             <button
               onClick={() => setViewMode('preview')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
                 viewMode === 'preview'
-                  ? 'bg-zinc-700 text-white'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-blue text-white shadow-lg shadow-blue/20'
+                  : 'text-navy-400 hover:text-white'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
@@ -90,10 +191,10 @@ export function PreviewPanel({
             </button>
             <button
               onClick={() => setViewMode('code')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
                 viewMode === 'code'
-                  ? 'bg-zinc-700 text-white'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-blue text-white shadow-lg shadow-blue/20'
+                  : 'text-navy-400 hover:text-white'
               }`}
             >
               <Code className="w-3.5 h-3.5" />
@@ -103,269 +204,199 @@ export function PreviewPanel({
 
           {/* Device Size Toggle (only in preview mode) */}
           {viewMode === 'preview' && (
-            <div className="flex items-center gap-1 ml-2">
-              <button
-                onClick={() => setDeviceSize('desktop')}
-                className={`p-1.5 rounded ${
-                  deviceSize === 'desktop' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
-                }`}
-                title="Desktop"
-              >
-                <Monitor className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setDeviceSize('tablet')}
-                className={`p-1.5 rounded ${
-                  deviceSize === 'tablet' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
-                }`}
-                title="Tablet"
-              >
-                <Tablet className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setDeviceSize('mobile')}
-                className={`p-1.5 rounded ${
-                  deviceSize === 'mobile' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
-                }`}
-                title="Mobile"
-              >
-                <Smartphone className="w-4 h-4" />
-              </button>
+            <div className="flex items-center gap-0.5 ml-1 p-1 bg-navy-800/40 rounded-lg">
+              {(Object.keys(DEVICE_CONFIGS) as DeviceSize[]).map((size) => {
+                const Icon = size === 'desktop' ? Monitor : size === 'tablet' ? Tablet : Smartphone
+                return (
+                  <button
+                    key={size}
+                    onClick={() => setDeviceSize(size)}
+                    className={`p-1.5 rounded-md transition-all duration-200 ${
+                      deviceSize === size
+                        ? 'bg-navy-700 text-white shadow-sm'
+                        : 'text-navy-500 hover:text-white hover:bg-navy-700/50'
+                    }`}
+                    title={DEVICE_CONFIGS[size].label}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </button>
+                )
+              })}
             </div>
           )}
+
+          {/* Theme indicator */}
+          <div className="hidden md:flex items-center gap-2 px-2.5 py-1 bg-navy-800/40 rounded-lg">
+            <div
+              className="w-3 h-3 rounded-full border border-white/20"
+              style={{ background: themeData.primary }}
+            />
+            <span className="text-xs text-navy-400">{themeData.name}</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Refresh button */}
+          {hasContent && viewMode === 'preview' && (
+            <button
+              onClick={handleRefresh}
+              className="p-1.5 text-navy-500 hover:text-white hover:bg-navy-700/50 rounded-md transition-all duration-200"
+              title="Refresh preview"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          )}
+
           {/* Copy/Download Actions */}
           {viewMode === 'code' ? (
             <button
               onClick={handleCopyHtml}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-zinc-300 transition-colors"
+              disabled={!hasContent}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-navy-800/60 hover:bg-navy-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium text-navy-300 hover:text-white transition-all duration-200"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-              Copy HTML
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copied!' : 'Copy HTML'}
             </button>
           ) : (
             <>
               <button
                 onClick={handleDownloadHtml}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-zinc-300 transition-colors"
+                disabled={!hasContent}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-navy-800/60 hover:bg-navy-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium text-navy-300 hover:text-white transition-all duration-200"
               >
                 <Download className="w-3.5 h-3.5" />
                 Download
               </button>
 
               {publicUrl && isPublic && (
-                <button
-                  onClick={handleCopyLink}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-zinc-300 transition-colors"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  Copy Link
-                </button>
-              )}
+                <>
+                  <button
+                    onClick={handleCopyLink}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-navy-800/60 hover:bg-navy-700 rounded-lg text-xs font-medium text-navy-300 hover:text-white transition-all duration-200"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? 'Copied!' : 'Copy Link'}
+                  </button>
 
-              {publicUrl && isPublic && (
-                <a
-                  href={publicUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-xs text-white transition-colors"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Open
-                </a>
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue hover:bg-blue-hover rounded-lg text-xs font-medium text-white transition-all duration-200 shadow-lg shadow-blue/20"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Open
+                  </a>
+                </>
               )}
             </>
           )}
 
-          {onToggleFullscreen && (
-            <button
-              onClick={onToggleFullscreen}
-              className="p-1.5 text-zinc-500 hover:text-white transition-colors"
-              title="Fullscreen"
-            >
-              <Maximize2 className="w-4 h-4" />
-            </button>
-          )}
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={toggleFullscreen}
+            className="p-1.5 text-navy-500 hover:text-white hover:bg-navy-700/50 rounded-md transition-all duration-200"
+            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
       {/* Preview Content */}
-      <div className="flex-1 overflow-hidden p-4 bg-zinc-950">
+      <div className="flex-1 overflow-hidden p-5 bg-navy-950">
         {viewMode === 'preview' ? (
           <div
             className="h-full mx-auto transition-all duration-300"
-            style={{ maxWidth: DEVICE_WIDTHS[deviceSize] }}
+            style={{ maxWidth: DEVICE_CONFIGS[deviceSize].width }}
           >
-            {html ? (
-              <iframe
-                srcDoc={getFullHtml(html, theme, title)}
-                className="w-full h-full bg-white rounded-lg shadow-2xl"
-                title="Document Preview"
-                sandbox="allow-scripts"
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center rounded-lg border-2 border-dashed border-zinc-800">
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-zinc-800 rounded-xl flex items-center justify-center">
-                    <Eye className="w-8 h-8 text-zinc-600" />
+            {hasContent ? (
+              <div className="relative h-full">
+                {/* Loading overlay when generating */}
+                {isGenerating && (
+                  <div className="absolute inset-0 bg-navy-950/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue to-blue-hover flex items-center justify-center animate-pulse">
+                        <Sparkles className="w-6 h-6 text-white" />
+                      </div>
+                      <p className="text-sm text-navy-300">Updating preview...</p>
+                    </div>
                   </div>
-                  <p className="text-zinc-500 text-sm">
-                    Your document will appear here
+                )}
+
+                {/* Sample badge */}
+                {showSample && (
+                  <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/30 rounded-full text-amber-400 text-xs font-medium">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Sample Preview
+                  </div>
+                )}
+
+                <iframe
+                  key={iframeKey}
+                  srcDoc={iframeContent}
+                  className="w-full h-full bg-white rounded-xl shadow-2xl ring-1 ring-navy-700/50"
+                  title="Document Preview"
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center rounded-xl border-2 border-dashed border-navy-800/50 bg-navy-900/30">
+                <div className="text-center px-8 max-w-md">
+                  <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-navy-800/80 to-navy-700/50 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Building2 className="w-10 h-10 text-navy-500" />
+                  </div>
+                  <h3 className="font-display text-xl font-medium text-navy-200 mb-3">
+                    Document Preview
+                  </h3>
+                  <p className="text-navy-500 text-sm mb-6 leading-relaxed">
+                    Your CRE marketing document will appear here. Start a conversation to generate investment memos, tear sheets, and more.
                   </p>
-                  <p className="text-zinc-600 text-xs mt-1">
-                    Start chatting to generate content
-                  </p>
+                  <button
+                    onClick={() => setShowSample(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-navy-800/60 hover:bg-navy-700 border border-navy-700/50 hover:border-navy-600 rounded-lg text-sm font-medium text-navy-300 hover:text-white transition-all duration-200"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Preview Sample Document
+                  </button>
                 </div>
               </div>
             )}
           </div>
         ) : (
-          <div className="h-full overflow-auto">
-            <pre className="p-4 bg-zinc-900 rounded-lg text-xs text-zinc-300 font-mono whitespace-pre-wrap break-words">
-              {html || '<!-- No HTML content yet -->'}
+          <div className="h-full overflow-auto rounded-xl bg-navy-900/60 border border-navy-800/50">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-navy-800/50">
+              <span className="text-xs font-medium text-navy-400">HTML Source</span>
+              {hasContent && (
+                <span className="text-xs text-navy-600">
+                  {(html || (showSample ? SAMPLE_CRE_DOCUMENT : '')).length.toLocaleString()} characters
+                </span>
+              )}
+            </div>
+            <pre className="p-5 text-xs text-navy-300 font-mono whitespace-pre-wrap break-words leading-relaxed">
+              {html || (showSample ? wrapDocumentHTML(SAMPLE_CRE_DOCUMENT, title, creTheme) : '<!-- No HTML content yet -->\n\n<!-- Start chatting to generate your document -->')}
             </pre>
           </div>
         )}
       </div>
+
+      {/* Status Bar */}
+      {hasContent && (
+        <div className="flex-shrink-0 px-4 py-2 border-t border-navy-800/50 bg-navy-900/60 flex items-center justify-between">
+          <div className="flex items-center gap-4 text-xs text-navy-500">
+            <span className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              {showSample ? 'Sample' : 'Live Preview'}
+            </span>
+            <span>Theme: {themeData.name}</span>
+          </div>
+          {slug && (
+            <span className="text-xs text-navy-600 font-mono">
+              /p/{slug}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
-}
-
-function getFullHtml(content: string, theme: PageTheme, title: string): string {
-  const themeStyles = getThemeStyles(theme)
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
-  <style>
-    ${themeStyles}
-  </style>
-</head>
-<body>
-  ${content}
-</body>
-</html>`
-}
-
-function getThemeStyles(theme: PageTheme): string {
-  const themes: Record<PageTheme, string> = {
-    'professional-dark': `
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%);
-        color: #e5e5e5;
-        line-height: 1.7;
-        padding: 3rem;
-        min-height: 100vh;
-      }
-      h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 1.5rem; color: #fff; }
-      h2 { font-size: 1.75rem; font-weight: 600; margin: 2rem 0 1rem; color: #fff; }
-      h3 { font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: #f5f5f5; }
-      p { margin-bottom: 1rem; }
-      ul, ol { margin: 1rem 0; padding-left: 1.5rem; }
-      li { margin-bottom: 0.5rem; }
-      .highlight { background: linear-gradient(90deg, #8b5cf6, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-      .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 1.5rem; margin: 1.5rem 0; }
-      .metric { font-size: 2.5rem; font-weight: 700; color: #8b5cf6; }
-      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
-      a { color: #8b5cf6; text-decoration: none; }
-      a:hover { text-decoration: underline; }
-      .cta { display: inline-block; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; margin-top: 1rem; }
-    `,
-    'clean-light': `
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: #ffffff;
-        color: #374151;
-        line-height: 1.7;
-        padding: 3rem;
-        min-height: 100vh;
-      }
-      h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 1.5rem; color: #111827; }
-      h2 { font-size: 1.75rem; font-weight: 600; margin: 2rem 0 1rem; color: #1f2937; }
-      h3 { font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: #374151; }
-      p { margin-bottom: 1rem; }
-      ul, ol { margin: 1rem 0; padding-left: 1.5rem; }
-      li { margin-bottom: 0.5rem; }
-      .highlight { color: #7c3aed; font-weight: 600; }
-      .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 1rem; padding: 1.5rem; margin: 1.5rem 0; }
-      .metric { font-size: 2.5rem; font-weight: 700; color: #7c3aed; }
-      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
-      a { color: #7c3aed; text-decoration: none; }
-      a:hover { text-decoration: underline; }
-      .cta { display: inline-block; background: #7c3aed; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; margin-top: 1rem; }
-    `,
-    'corporate-blue': `
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-        color: #cbd5e1;
-        line-height: 1.7;
-        padding: 3rem;
-        min-height: 100vh;
-      }
-      h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 1.5rem; color: #f1f5f9; }
-      h2 { font-size: 1.75rem; font-weight: 600; margin: 2rem 0 1rem; color: #e2e8f0; }
-      h3 { font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: #cbd5e1; }
-      p { margin-bottom: 1rem; }
-      ul, ol { margin: 1rem 0; padding-left: 1.5rem; }
-      li { margin-bottom: 0.5rem; }
-      .highlight { color: #3b82f6; font-weight: 600; }
-      .card { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 1rem; padding: 1.5rem; margin: 1.5rem 0; }
-      .metric { font-size: 2.5rem; font-weight: 700; color: #3b82f6; }
-      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
-      a { color: #60a5fa; text-decoration: none; }
-      a:hover { text-decoration: underline; }
-      .cta { display: inline-block; background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; margin-top: 1rem; }
-    `,
-    'modern-minimal': `
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        background: #fafafa;
-        color: #525252;
-        line-height: 1.8;
-        padding: 4rem 3rem;
-        min-height: 100vh;
-        max-width: 800px;
-        margin: 0 auto;
-      }
-      h1 { font-size: 2rem; font-weight: 600; margin-bottom: 2rem; color: #171717; letter-spacing: -0.025em; }
-      h2 { font-size: 1.5rem; font-weight: 600; margin: 3rem 0 1rem; color: #262626; }
-      h3 { font-size: 1.125rem; font-weight: 600; margin: 2rem 0 0.75rem; color: #404040; }
-      p { margin-bottom: 1.25rem; }
-      ul, ol { margin: 1.25rem 0; padding-left: 1.5rem; }
-      li { margin-bottom: 0.75rem; }
-      .highlight { color: #171717; font-weight: 600; }
-      .card { background: white; border: 1px solid #e5e5e5; border-radius: 0.75rem; padding: 1.5rem; margin: 1.5rem 0; }
-      .metric { font-size: 2rem; font-weight: 600; color: #171717; }
-      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
-      a { color: #171717; text-decoration: underline; text-underline-offset: 2px; }
-      .cta { display: inline-block; background: #171717; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; margin-top: 1rem; text-decoration: none; }
-    `,
-    'custom': `
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: #ffffff;
-        color: #333;
-        line-height: 1.6;
-        padding: 2rem;
-      }
-      h1 { font-size: 2rem; margin-bottom: 1rem; }
-      h2 { font-size: 1.5rem; margin: 1.5rem 0 0.75rem; }
-      p { margin-bottom: 1rem; }
-      ul, ol { margin: 1rem 0; padding-left: 1.5rem; }
-    `,
-  }
-
-  return themes[theme] || themes['professional-dark']
 }
