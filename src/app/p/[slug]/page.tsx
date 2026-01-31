@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { PageTheme } from '@/types'
+import { CRE_THEMES, getThemeCSS } from '@/lib/cre-themes'
 
 // Use service role for public page serving
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -16,15 +17,16 @@ interface PageData {
   id: string
   slug: string
   title: string
-  description: string | null
+  description?: string | null
   html: string
-  theme: PageTheme
-  branding: {
+  theme: PageTheme | string
+  branding?: {
     logo_url?: string
     primary_color?: string
     secondary_color?: string
     font_family?: string
   }
+  custom_branding?: Record<string, unknown>
   is_public: boolean
   view_count: number
 }
@@ -50,23 +52,35 @@ async function getPage(slug: string): Promise<PageData | null> {
     return null
   }
 
-  const { data: page, error } = await supabase
-    .from('pages')
-    .select('id, slug, title, description, html, theme, branding, is_public, view_count')
+  // Try pagelink_documents table first (V2)
+  let { data: page, error } = await supabase
+    .from('pagelink_documents')
+    .select('id, slug, title, html, theme, custom_branding, is_public, view_count')
     .eq('slug', slug)
     .eq('is_public', true)
     .single()
 
+  // Fallback to pages table (V1) if not found
   if (error || !page) {
-    return null
+    const { data: legacyPage, error: legacyError } = await supabase
+      .from('pages')
+      .select('id, slug, title, description, html, theme, branding, is_public, view_count')
+      .eq('slug', slug)
+      .eq('is_public', true)
+      .single()
+
+    if (legacyError || !legacyPage) {
+      return null
+    }
+
+    // Map legacy page format
+    page = {
+      ...legacyPage,
+      custom_branding: legacyPage.branding,
+    }
   }
 
-  // Increment view count (fire and forget)
-  supabase
-    .from('pages')
-    .update({ view_count: (page.view_count || 0) + 1 })
-    .eq('id', page.id)
-    .then(() => {})
+  // View count is now tracked via the analytics API, not here
 
   return page as PageData
 }
@@ -107,6 +121,53 @@ export default async function PublicPage({
   }
 
   const themeStyles = getThemeStyles(page.theme)
+
+  // Analytics tracking script
+  const analyticsScript = `
+    (function() {
+      var tracked = false;
+      var startTime = Date.now();
+
+      function trackView() {
+        if (tracked) return;
+        tracked = true;
+        fetch('/api/analytics/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            document_id: '${page.id}',
+            slug: '${slug}',
+            event_type: 'view'
+          })
+        }).catch(function() {});
+      }
+
+      function trackEngagement() {
+        var timeOnPage = Math.round((Date.now() - startTime) / 1000);
+        if (timeOnPage < 5) return;
+        fetch('/api/analytics/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            document_id: '${page.id}',
+            slug: '${slug}',
+            event_type: 'engagement',
+            time_on_page: timeOnPage
+          }),
+          keepalive: true
+        }).catch(function() {});
+      }
+
+      // Track view after short delay
+      setTimeout(trackView, 500);
+
+      // Track engagement on page leave
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') trackEngagement();
+      });
+      window.addEventListener('beforeunload', trackEngagement);
+    })();
+  `
 
   return (
     <html lang="en">
@@ -155,13 +216,22 @@ export default async function PublicPage({
           </svg>
           Made with Pagelink
         </a>
+
+        {/* Analytics Tracking */}
+        <script dangerouslySetInnerHTML={{ __html: analyticsScript }} />
       </body>
     </html>
   )
 }
 
-function getThemeStyles(theme: PageTheme): string {
-  const themes: Record<PageTheme, string> = {
+function getThemeStyles(theme: PageTheme | string): string {
+  // Check if it's a CRE theme first
+  if (theme in CRE_THEMES) {
+    return getThemeCSS(theme)
+  }
+
+  // Legacy themes
+  const themes: Record<string, string> = {
     'professional-dark': `
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
