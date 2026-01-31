@@ -12,6 +12,7 @@ import {
   Eye,
   Code,
   Maximize2,
+  FileText,
 } from 'lucide-react'
 import { PageTheme } from '@/types'
 
@@ -71,18 +72,18 @@ export function PreviewPanel({
   }
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900">
+    <div className="flex flex-col h-full bg-navy-900/50">
       {/* Preview Header */}
-      <div className="flex-shrink-0 px-4 py-2 border-b border-zinc-800 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex-shrink-0 px-4 py-3 border-b border-navy-800/50 flex items-center justify-between bg-navy-900/80 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
           {/* View Mode Toggle */}
-          <div className="flex bg-zinc-800 rounded-lg p-0.5">
+          <div className="flex bg-navy-800/60 rounded-lg p-1">
             <button
               onClick={() => setViewMode('preview')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
                 viewMode === 'preview'
-                  ? 'bg-zinc-700 text-white'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-blue text-white shadow-lg shadow-blue/20'
+                  : 'text-navy-400 hover:text-white'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
@@ -90,10 +91,10 @@ export function PreviewPanel({
             </button>
             <button
               onClick={() => setViewMode('code')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
                 viewMode === 'code'
-                  ? 'bg-zinc-700 text-white'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-blue text-white shadow-lg shadow-blue/20'
+                  : 'text-navy-400 hover:text-white'
               }`}
             >
               <Code className="w-3.5 h-3.5" />
@@ -103,34 +104,25 @@ export function PreviewPanel({
 
           {/* Device Size Toggle (only in preview mode) */}
           {viewMode === 'preview' && (
-            <div className="flex items-center gap-1 ml-2">
-              <button
-                onClick={() => setDeviceSize('desktop')}
-                className={`p-1.5 rounded ${
-                  deviceSize === 'desktop' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
-                }`}
-                title="Desktop"
-              >
-                <Monitor className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setDeviceSize('tablet')}
-                className={`p-1.5 rounded ${
-                  deviceSize === 'tablet' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
-                }`}
-                title="Tablet"
-              >
-                <Tablet className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setDeviceSize('mobile')}
-                className={`p-1.5 rounded ${
-                  deviceSize === 'mobile' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'
-                }`}
-                title="Mobile"
-              >
-                <Smartphone className="w-4 h-4" />
-              </button>
+            <div className="flex items-center gap-0.5 ml-1 p-1 bg-navy-800/40 rounded-lg">
+              {[
+                { size: 'desktop' as DeviceSize, icon: Monitor },
+                { size: 'tablet' as DeviceSize, icon: Tablet },
+                { size: 'mobile' as DeviceSize, icon: Smartphone },
+              ].map(({ size, icon: Icon }) => (
+                <button
+                  key={size}
+                  onClick={() => setDeviceSize(size)}
+                  className={`p-1.5 rounded-md transition-all duration-200 ${
+                    deviceSize === size
+                      ? 'bg-navy-700 text-white shadow-sm'
+                      : 'text-navy-500 hover:text-white hover:bg-navy-700/50'
+                  }`}
+                  title={size.charAt(0).toUpperCase() + size.slice(1)}
+                >
+                  <Icon className="w-4 h-4" />
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -140,16 +132,16 @@ export function PreviewPanel({
           {viewMode === 'code' ? (
             <button
               onClick={handleCopyHtml}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-zinc-300 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-navy-800/60 hover:bg-navy-700 rounded-lg text-xs font-medium text-navy-300 hover:text-white transition-all duration-200"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-              Copy HTML
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copied!' : 'Copy HTML'}
             </button>
           ) : (
             <>
               <button
                 onClick={handleDownloadHtml}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-zinc-300 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-navy-800/60 hover:bg-navy-700 rounded-lg text-xs font-medium text-navy-300 hover:text-white transition-all duration-200"
               >
                 <Download className="w-3.5 h-3.5" />
                 Download
@@ -158,10 +150,10 @@ export function PreviewPanel({
               {publicUrl && isPublic && (
                 <button
                   onClick={handleCopyLink}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-zinc-300 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-navy-800/60 hover:bg-navy-700 rounded-lg text-xs font-medium text-navy-300 hover:text-white transition-all duration-200"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  Copy Link
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? 'Copied!' : 'Copy Link'}
                 </button>
               )}
 
@@ -170,7 +162,7 @@ export function PreviewPanel({
                   href={publicUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-xs text-white transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue hover:bg-blue-hover rounded-lg text-xs font-medium text-white transition-all duration-200 shadow-lg shadow-blue/20"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   Open
@@ -182,7 +174,7 @@ export function PreviewPanel({
           {onToggleFullscreen && (
             <button
               onClick={onToggleFullscreen}
-              className="p-1.5 text-zinc-500 hover:text-white transition-colors"
+              className="p-1.5 text-navy-500 hover:text-white hover:bg-navy-700/50 rounded-md transition-all duration-200"
               title="Fullscreen"
             >
               <Maximize2 className="w-4 h-4" />
@@ -192,7 +184,7 @@ export function PreviewPanel({
       </div>
 
       {/* Preview Content */}
-      <div className="flex-1 overflow-hidden p-4 bg-zinc-950">
+      <div className="flex-1 overflow-hidden p-5 bg-navy-950">
         {viewMode === 'preview' ? (
           <div
             className="h-full mx-auto transition-all duration-300"
@@ -201,30 +193,30 @@ export function PreviewPanel({
             {html ? (
               <iframe
                 srcDoc={getFullHtml(html, theme, title)}
-                className="w-full h-full bg-white rounded-lg shadow-2xl"
+                className="w-full h-full bg-white rounded-xl shadow-2xl ring-1 ring-navy-700/50"
                 title="Document Preview"
                 sandbox="allow-scripts"
               />
             ) : (
-              <div className="h-full flex items-center justify-center rounded-lg border-2 border-dashed border-zinc-800">
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-zinc-800 rounded-xl flex items-center justify-center">
-                    <Eye className="w-8 h-8 text-zinc-600" />
+              <div className="h-full flex items-center justify-center rounded-xl border-2 border-dashed border-navy-800/50 bg-navy-900/30">
+                <div className="text-center px-8">
+                  <div className="w-16 h-16 mx-auto mb-5 bg-navy-800/50 rounded-2xl flex items-center justify-center">
+                    <FileText className="w-8 h-8 text-navy-600" />
                   </div>
-                  <p className="text-zinc-500 text-sm">
-                    Your document will appear here
-                  </p>
-                  <p className="text-zinc-600 text-xs mt-1">
-                    Start chatting to generate content
+                  <h3 className="font-display text-lg font-medium text-navy-300 mb-2">
+                    Your document preview
+                  </h3>
+                  <p className="text-navy-500 text-sm max-w-xs">
+                    Start chatting to generate your CRE marketing document. It will appear here in real-time.
                   </p>
                 </div>
               </div>
             )}
           </div>
         ) : (
-          <div className="h-full overflow-auto">
-            <pre className="p-4 bg-zinc-900 rounded-lg text-xs text-zinc-300 font-mono whitespace-pre-wrap break-words">
-              {html || '<!-- No HTML content yet -->'}
+          <div className="h-full overflow-auto rounded-xl bg-navy-900/60 border border-navy-800/50">
+            <pre className="p-5 text-xs text-navy-300 font-mono whitespace-pre-wrap break-words leading-relaxed">
+              {html || '<!-- No HTML content yet -->\n\n<!-- Start chatting to generate your document -->'}
             </pre>
           </div>
         )}
@@ -270,13 +262,13 @@ function getThemeStyles(theme: PageTheme): string {
       p { margin-bottom: 1rem; }
       ul, ol { margin: 1rem 0; padding-left: 1.5rem; }
       li { margin-bottom: 0.5rem; }
-      .highlight { background: linear-gradient(90deg, #8b5cf6, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+      .highlight { background: linear-gradient(90deg, #3b82f6, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
       .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 1.5rem; margin: 1.5rem 0; }
-      .metric { font-size: 2.5rem; font-weight: 700; color: #8b5cf6; }
+      .metric { font-size: 2.5rem; font-weight: 700; color: #3b82f6; }
       .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
-      a { color: #8b5cf6; text-decoration: none; }
+      a { color: #3b82f6; text-decoration: none; }
       a:hover { text-decoration: underline; }
-      .cta { display: inline-block; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; margin-top: 1rem; }
+      .cta { display: inline-block; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; margin-top: 1rem; }
     `,
     'clean-light': `
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -294,13 +286,13 @@ function getThemeStyles(theme: PageTheme): string {
       p { margin-bottom: 1rem; }
       ul, ol { margin: 1rem 0; padding-left: 1.5rem; }
       li { margin-bottom: 0.5rem; }
-      .highlight { color: #7c3aed; font-weight: 600; }
+      .highlight { color: #3b82f6; font-weight: 600; }
       .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 1rem; padding: 1.5rem; margin: 1.5rem 0; }
-      .metric { font-size: 2.5rem; font-weight: 700; color: #7c3aed; }
+      .metric { font-size: 2.5rem; font-weight: 700; color: #3b82f6; }
       .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
-      a { color: #7c3aed; text-decoration: none; }
+      a { color: #3b82f6; text-decoration: none; }
       a:hover { text-decoration: underline; }
-      .cta { display: inline-block; background: #7c3aed; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; margin-top: 1rem; }
+      .cta { display: inline-block; background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; margin-top: 1rem; }
     `,
     'corporate-blue': `
       * { margin: 0; padding: 0; box-sizing: border-box; }

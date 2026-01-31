@@ -42,8 +42,8 @@ declare global {
     webkitSpeechRecognition?: new () => SpeechRecognition
   }
 }
+
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { ChatPanel } from '@/components/pagelink/chat-panel'
 import { PreviewPanel } from '@/components/pagelink/preview-panel'
 import { CRE_THEMES, getThemeSwatches } from '@/lib/cre-themes'
@@ -51,7 +51,7 @@ import { extractNYCAddress, fetchPLUTOData, type PropertyData } from '@/services
 import { PageChat, PageTheme } from '@/types'
 import {
   ArrowLeft,
-  Settings,
+  Settings2,
   Palette,
   FileText,
   Building2,
@@ -59,20 +59,41 @@ import {
   MicOff,
   Loader2,
   Check,
+  MapPin,
+  ChevronDown,
   X,
 } from 'lucide-react'
 
 type DocumentType = 'offering_memorandum' | 'tear_sheet' | 'leasing_flyer' | 'one_pager'
 
 const DOCUMENT_TYPES = [
-  { id: 'offering_memorandum', name: 'Offering Memorandum', description: 'Full investment package' },
-  { id: 'tear_sheet', name: 'Tear Sheet', description: 'One-page property summary' },
-  { id: 'leasing_flyer', name: 'Leasing Flyer', description: 'Space availability' },
-  { id: 'one_pager', name: 'One Pager', description: 'Quick overview' },
+  {
+    id: 'offering_memorandum',
+    name: 'Offering Memorandum',
+    description: 'Multi-page investment package',
+    icon: '📊'
+  },
+  {
+    id: 'tear_sheet',
+    name: 'Tear Sheet',
+    description: 'One-page property summary',
+    icon: '📄'
+  },
+  {
+    id: 'leasing_flyer',
+    name: 'Leasing Flyer',
+    description: 'Space availability marketing',
+    icon: '🏢'
+  },
+  {
+    id: 'one_pager',
+    name: 'One Pager',
+    description: 'Quick property overview',
+    icon: '📋'
+  },
 ]
 
 export default function CreatePage() {
-  const router = useRouter()
   const [pageId, setPageId] = useState<string | null>(null)
   const [slug, setSlug] = useState<string | null>(null)
   const [messages, setMessages] = useState<PageChat[]>([])
@@ -113,7 +134,6 @@ export default function CreatePage() {
         const data = await fetchPLUTOData(addressMatch.address, addressMatch.borough)
         if (data) {
           setPropertyData(data)
-          // Add property context to message
           message = `${message}\n\n[Property data fetched: ${data.address}, ${data.borough} - ${data.buildingArea.toLocaleString()} SF, ${data.unitsTotal} units, built ${data.yearBuilt}]`
         }
       } catch (error) {
@@ -177,19 +197,17 @@ export default function CreatePage() {
                 setStreamingContent(fullResponse)
               } else if (data.type === 'done') {
                 setSlug(data.slug)
-                // Extract HTML from response
                 const htmlMatch = fullResponse.match(/```html\n([\s\S]*?)```/)?.[1] ||
                                  fullResponse.match(/<!DOCTYPE html[\s\S]*<\/html>/i)?.[0]
                 if (htmlMatch) {
                   setHtml(htmlMatch)
-                  // Extract title
                   const titleMatch = htmlMatch.match(/<title>([^<]+)<\/title>/i)
                   if (titleMatch) setTitle(titleMatch[1])
                 }
               } else if (data.type === 'error') {
                 throw new Error(data.message)
               }
-            } catch (e) {
+            } catch {
               // Ignore JSON parse errors for incomplete chunks
             }
           }
@@ -219,7 +237,7 @@ export default function CreatePage() {
       setIsGenerating(false)
       setStreamingContent('')
     }
-  }, [messages, slug, html, documentType, creTheme, propertyData])
+  }, [messages, slug, html, documentType, creTheme, propertyData, pageId])
 
   const toggleVoiceInput = useCallback(() => {
     if (!recognition) return
@@ -255,37 +273,50 @@ export default function CreatePage() {
   const themeSwatches = getThemeSwatches()
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-950">
+    <div className="h-screen flex flex-col bg-navy-950">
       {/* Header */}
-      <header className="h-14 border-b border-zinc-800 bg-zinc-900 flex items-center justify-between px-4">
+      <header className="h-16 border-b border-navy-800/50 bg-navy-900/80 backdrop-blur-sm flex items-center justify-between px-5">
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard"
-            className="p-2 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-white"
+            className="p-2 hover:bg-navy-800/50 rounded-lg transition-colors text-navy-400 hover:text-white"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-violet-400" />
-            <span className="font-medium text-white">{title}</span>
-            {slug && (
-              <span className="text-xs text-zinc-500 font-mono">/{slug}</span>
-            )}
+
+          <div className="h-8 w-px bg-navy-700/50" />
+
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue to-blue-hover flex items-center justify-center shadow-lg shadow-blue/20">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="font-display text-lg font-medium text-white leading-tight">{title}</h1>
+              {slug && (
+                <p className="text-xs text-navy-400 font-mono">pagelink.co/p/{slug}</p>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Property Data Indicator */}
+        <div className="flex items-center gap-3">
+          {/* Property Data Badge */}
           {isLoadingProperty && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg text-xs">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              Loading property data...
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue/10 border border-blue/20 text-blue rounded-lg text-xs font-medium animate-pulse">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Fetching property data...</span>
             </div>
           )}
-          {propertyData && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 text-green-400 rounded-lg text-xs">
-              <Check className="w-3 h-3" />
-              {propertyData.address}
+          {propertyData && !isLoadingProperty && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-medium">
+              <MapPin className="w-3.5 h-3.5" />
+              <span className="max-w-[180px] truncate">{propertyData.address}</span>
+              <button
+                onClick={() => setPropertyData(null)}
+                className="ml-1 p-0.5 hover:bg-emerald-500/20 rounded transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
             </div>
           )}
 
@@ -293,10 +324,10 @@ export default function CreatePage() {
           {recognition && (
             <button
               onClick={toggleVoiceInput}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2.5 rounded-lg transition-all ${
                 isListening
-                  ? 'bg-red-500/20 text-red-400 animate-pulse'
-                  : 'hover:bg-zinc-800 text-zinc-400 hover:text-white'
+                  ? 'bg-red-500/20 text-red-400 ring-2 ring-red-500/30 animate-pulse'
+                  : 'hover:bg-navy-800/50 text-navy-400 hover:text-white'
               }`}
               title={isListening ? 'Stop recording' : 'Voice input'}
             >
@@ -307,41 +338,63 @@ export default function CreatePage() {
           {/* Settings Toggle */}
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all ${
               showSettings
-                ? 'bg-violet-500/20 text-violet-400'
-                : 'hover:bg-zinc-800 text-zinc-400 hover:text-white'
+                ? 'bg-blue/20 text-blue ring-1 ring-blue/30'
+                : 'bg-navy-800/50 hover:bg-navy-800 text-navy-300 hover:text-white'
             }`}
           >
-            <Settings className="w-5 h-5" />
+            <Settings2 className="w-4 h-4" />
+            <span className="text-sm font-medium">Settings</span>
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showSettings ? 'rotate-180' : ''}`} />
           </button>
         </div>
       </header>
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="border-b border-zinc-800 bg-zinc-900 p-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-2 gap-6">
+        <div className="border-b border-navy-800/50 bg-navy-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="max-w-5xl mx-auto px-6 py-6">
+            <div className="grid grid-cols-2 gap-10">
               {/* Document Type */}
               <div>
-                <label className="flex items-center gap-2 text-sm text-zinc-400 mb-3">
-                  <FileText className="w-4 h-4" />
+                <label className="flex items-center gap-2 text-sm font-medium text-navy-200 mb-4">
+                  <FileText className="w-4 h-4 text-blue" />
                   Document Type
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   {DOCUMENT_TYPES.map(type => (
                     <button
                       key={type.id}
                       onClick={() => setDocumentType(type.id as DocumentType)}
-                      className={`p-3 rounded-lg text-left transition-all ${
+                      className={`relative group p-4 rounded-xl text-left transition-all duration-200 ${
                         documentType === type.id
-                          ? 'bg-violet-500/20 border-violet-500 border text-white'
-                          : 'bg-zinc-800 border border-zinc-700 text-zinc-300 hover:border-zinc-600'
+                          ? 'bg-blue/15 border-2 border-blue shadow-lg shadow-blue/5'
+                          : 'bg-navy-800/40 border-2 border-transparent hover:border-navy-600/50 hover:bg-navy-800/60'
                       }`}
                     >
-                      <div className="font-medium text-sm">{type.name}</div>
-                      <div className="text-xs text-zinc-500">{type.description}</div>
+                      <div className="flex items-start gap-3">
+                        <span className="text-xl">{type.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className={`font-medium text-sm ${
+                            documentType === type.id ? 'text-white' : 'text-navy-200 group-hover:text-white'
+                          }`}>
+                            {type.name}
+                          </div>
+                          <div className={`text-xs mt-1 ${
+                            documentType === type.id ? 'text-blue' : 'text-navy-500'
+                          }`}>
+                            {type.description}
+                          </div>
+                        </div>
+                      </div>
+                      {documentType === type.id && (
+                        <div className="absolute top-3 right-3">
+                          <div className="w-5 h-5 rounded-full bg-blue flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -349,36 +402,62 @@ export default function CreatePage() {
 
               {/* Theme */}
               <div>
-                <label className="flex items-center gap-2 text-sm text-zinc-400 mb-3">
-                  <Palette className="w-4 h-4" />
-                  Theme
+                <label className="flex items-center gap-2 text-sm font-medium text-navy-200 mb-4">
+                  <Palette className="w-4 h-4 text-blue" />
+                  Color Theme
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {themeSwatches.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => setCreTheme(t.id)}
-                      className={`p-3 rounded-lg transition-all ${
-                        creTheme === t.id
-                          ? 'ring-2 ring-violet-500 ring-offset-2 ring-offset-zinc-900'
-                          : 'hover:ring-1 hover:ring-zinc-600'
-                      }`}
-                      style={{ background: t.colors[2] }}
-                    >
-                      <div className="flex gap-1 mb-2">
-                        {t.colors.slice(0, 2).map((color, i) => (
+                <div className="grid grid-cols-3 gap-3">
+                  {themeSwatches.map(t => {
+                    const themeData = CRE_THEMES[t.id]
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setCreTheme(t.id)}
+                        className={`relative overflow-hidden rounded-xl transition-all duration-200 ${
+                          creTheme === t.id
+                            ? 'ring-2 ring-blue ring-offset-2 ring-offset-navy-900 shadow-lg'
+                            : 'hover:ring-1 hover:ring-navy-500'
+                        }`}
+                      >
+                        {/* Theme preview */}
+                        <div
+                          className="p-4 pb-3"
+                          style={{ background: themeData.background }}
+                        >
+                          {/* Color swatches */}
+                          <div className="flex gap-1.5 mb-2.5">
+                            <div
+                              className="w-5 h-5 rounded-full shadow-sm border border-white/10"
+                              style={{ background: themeData.primary }}
+                            />
+                            <div
+                              className="w-5 h-5 rounded-full shadow-sm border border-white/10"
+                              style={{ background: themeData.accent }}
+                            />
+                            <div
+                              className="w-5 h-5 rounded-full shadow-sm border border-white/10"
+                              style={{ background: themeData.primaryLight }}
+                            />
+                          </div>
+                          {/* Theme name */}
                           <div
-                            key={i}
-                            className="w-4 h-4 rounded-full"
-                            style={{ background: color }}
-                          />
-                        ))}
-                      </div>
-                      <div className="text-xs font-medium" style={{ color: t.colors[0] }}>
-                        {t.name}
-                      </div>
-                    </button>
-                  ))}
+                            className="text-xs font-semibold"
+                            style={{ color: themeData.text }}
+                          >
+                            {t.name}
+                          </div>
+                        </div>
+                        {/* Selected indicator */}
+                        {creTheme === t.id && (
+                          <div className="absolute top-2 right-2">
+                            <div className="w-5 h-5 rounded-full bg-blue flex items-center justify-center shadow-lg">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </div>
@@ -389,7 +468,7 @@ export default function CreatePage() {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Chat Panel */}
-        <div className="w-1/2 border-r border-zinc-800">
+        <div className="w-1/2 border-r border-navy-800/50">
           <ChatPanel
             pageId={pageId}
             messages={messages}
